@@ -80,13 +80,13 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 
 **Objetivo:** definir o formato do diagrama antes de acoplá-lo à interface.
 
-- [ ] Definir um formato JSON versionado com `schemaVersion`, `metadata` e `views`; cada vista armazena `id`, nome, altitude, `nodes`, `edges` e `viewport`.
-- [ ] Definir os tipos de altitude (`contexto`, `sistema`, `servicos`, `fluxo`) e os tipos de nós, conexões, posição, rótulos, propriedades visuais e grupos sem importar tipos do React Flow na camada de domínio.
-- [ ] Criar funções puras para adicionar, atualizar e remover nós e arestas.
-- [ ] Garantir IDs estáveis e impedir referências inválidas (como conexão para nó inexistente).
-- [ ] Definir valores padrão de estilo, uma vista inicial `Contexto` e um documento inicial vazio.
-- [ ] Implementar validação na leitura de arquivos (incluindo versão do formato e mensagens úteis de erro).
-- [ ] Criar testes unitários cobrindo operações, integridade e serialização.
+- [x] Definir um formato JSON versionado com `schemaVersion`, `metadata` e `views`; cada vista armazena `id`, nome, altitude, `nodes`, `edges` e `viewport`.
+- [x] Definir os tipos de altitude (`contexto`, `sistema`, `servicos`, `fluxo`) e os tipos de nós, conexões, posição, rótulos, propriedades visuais e grupos sem importar tipos do React Flow na camada de domínio.
+- [x] Criar funções puras para adicionar, atualizar e remover nós e arestas.
+- [x] Garantir IDs estáveis e impedir referências inválidas (como conexão para nó inexistente).
+- [x] Definir valores padrão de estilo, uma vista inicial `Contexto` e um documento inicial vazio.
+- [x] Implementar validação na leitura de arquivos (incluindo versão do formato e mensagens úteis de erro).
+- [x] Criar testes unitários cobrindo operações, integridade e serialização.
 
 **Critério de aceite:** um diagrama pode ser criado e modificado em testes usando apenas TypeScript, sem React, React Flow ou Electron.
 

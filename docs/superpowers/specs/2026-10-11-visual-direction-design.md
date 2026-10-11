@@ -12,14 +12,14 @@ A identidade é um atlas operacional: a legibilidade de um mapa técnico com a p
 
 ### Tokens
 
-| Nome | Valor | Uso |
-| --- | --- | --- |
-| Survey | `#E8ECE7` | Canvas, superfícies amplas e fundo de exportação padrão |
-| Graphite | `#162127` | Moldura do aplicativo, texto principal e controles escuros |
-| Harbor | `#315B68` | Seleção, navegação de vistas e elementos estruturais |
-| Signal Copper | `#C85F30` | Estado ativo, alertas de atenção e ação primária única |
-| Moss | `#8DA59A` | Grupos, contêineres e informações auxiliares |
-| Cloud | `#F8F7F2` | Superfícies elevadas, campos e texto sobre Graphite |
+| Nome          | Valor     | Uso                                                        |
+| ------------- | --------- | ---------------------------------------------------------- |
+| Survey        | `#E8ECE7` | Canvas, superfícies amplas e fundo de exportação padrão    |
+| Graphite      | `#162127` | Moldura do aplicativo, texto principal e controles escuros |
+| Harbor        | `#315B68` | Seleção, navegação de vistas e elementos estruturais       |
+| Signal Copper | `#C85F30` | Estado ativo, alertas de atenção e ação primária única     |
+| Moss          | `#8DA59A` | Grupos, contêineres e informações auxiliares               |
+| Cloud         | `#F8F7F2` | Superfícies elevadas, campos e texto sobre Graphite        |
 
 ### Tipografia
 
