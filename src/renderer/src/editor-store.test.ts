@@ -5,6 +5,8 @@ import { useEditorStore } from './editor-store'
 function resetStore(): void {
   useEditorStore.setState({
     document: createEmptyDocument('test', 'Test diagram'),
+    path: undefined,
+    dirty: false,
     selectedNodeIds: [],
     selectedEdgeIds: [],
     message: ''
@@ -26,6 +28,7 @@ describe('editor store', () => {
       x: 120,
       y: 80
     })
+    expect(useEditorStore.getState().dirty).toBe(true)
   })
 
   it('removes selected nodes and their attached connections', () => {

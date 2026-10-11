@@ -112,14 +112,14 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 
 **Objetivo:** tornar o aplicativo realmente utilizável offline.
 
-- [ ] Implementar `Novo`, `Abrir`, `Salvar` e `Salvar como` usando diálogos nativos do Electron.
-- [ ] Definir a extensão de projeto `.owlframe` (conteúdo JSON) ou `.json` documentado; escolher uma opção e mantê-la consistente.
-- [ ] Expor apenas operações necessárias de filesystem por IPC/preload, com validação no processo principal.
-- [ ] Evitar sobrescrever alterações não salvas sem confirmação.
-- [ ] Exibir nome do projeto e indicador de alterações pendentes.
-- [ ] Tratar arquivos inválidos, ausência de permissão e falhas de gravação sem travar o aplicativo.
-- [ ] Implementar escrita segura de arquivos (arquivo temporário + substituição, quando viável).
-- [ ] Testar o ciclo completo **criar → salvar → fechar → abrir → continuar editando**.
+- [x] Implementar `Novo`, `Abrir`, `Salvar` e `Salvar como` usando diálogos nativos do Electron.
+- [x] Definir a extensão de projeto `.owlframe` (conteúdo JSON) ou `.json` documentado; escolher uma opção e mantê-la consistente.
+- [x] Expor apenas operações necessárias de filesystem por IPC/preload, com validação no processo principal.
+- [x] Evitar sobrescrever alterações não salvas sem confirmação.
+- [x] Exibir nome do projeto e indicador de alterações pendentes.
+- [x] Tratar arquivos inválidos, ausência de permissão e falhas de gravação sem travar o aplicativo.
+- [x] Implementar escrita segura de arquivos (arquivo temporário + substituição, quando viável).
+- [x] Testar o ciclo completo **criar → salvar → fechar → abrir → continuar editando**.
 
 **Critério de aceite:** um projeto reabre com nós, conexões, posições e estilos preservados, inclusive após reiniciar o aplicativo.
 

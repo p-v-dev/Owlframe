@@ -36,14 +36,50 @@ function App(): React.JSX.Element {
   return (
     <main className="flex min-h-screen flex-col bg-slate-100 text-slate-900">
       <header className="flex items-center justify-between border-b border-slate-300 bg-white px-4 py-3">
-        <h1 className="text-xl font-semibold tracking-tight">Owlframe</h1>
-        <button
-          className="rounded bg-slate-800 px-3 py-2 text-sm font-medium text-white"
-          onClick={state.addService}
-          type="button"
-        >
-          Add service
-        </button>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Owlframe</h1>
+          <h2 className="text-sm text-slate-600">
+            {state.document.metadata.name}
+            {state.dirty ? ' *' : ''}
+          </h2>
+        </div>
+        <div className="flex gap-2">
+          <button
+            className="rounded border border-slate-300 px-3 py-2 text-sm"
+            onClick={state.newProject}
+            type="button"
+          >
+            New
+          </button>
+          <button
+            className="rounded border border-slate-300 px-3 py-2 text-sm"
+            onClick={state.openProject}
+            type="button"
+          >
+            Open
+          </button>
+          <button
+            className="rounded border border-slate-300 px-3 py-2 text-sm"
+            onClick={state.save}
+            type="button"
+          >
+            Save
+          </button>
+          <button
+            className="rounded border border-slate-300 px-3 py-2 text-sm"
+            onClick={state.saveAs}
+            type="button"
+          >
+            Save as
+          </button>
+          <button
+            className="rounded bg-slate-800 px-3 py-2 text-sm font-medium text-white"
+            onClick={state.addService}
+            type="button"
+          >
+            Add service
+          </button>
+        </div>
       </header>
       {state.message && (
         <p className="px-4 py-2 text-sm text-red-700" role="alert">

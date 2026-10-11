@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument } from '../../core/document'
 import App from './App'
 import { useEditorStore } from './editor-store'
@@ -21,8 +21,16 @@ globalThis.ResizeObserver = ResizeObserver
 
 afterEach(cleanup)
 beforeEach(() => {
+  window.owlframe = {
+    new: vi.fn(async () => ({ document: createEmptyDocument('new', 'Untitled diagram') })),
+    open: vi.fn(async () => ({ canceled: true as const })),
+    save: vi.fn(async () => ({ canceled: false, path: 'C:/projects/test.owlframe' })),
+    saveAs: vi.fn(async () => ({ canceled: false, path: 'C:/projects/test.owlframe' }))
+  }
   useEditorStore.setState({
     document: createEmptyDocument('test', 'Test diagram'),
+    path: undefined,
+    dirty: false,
     selectedNodeIds: [],
     selectedEdgeIds: [],
     message: ''
@@ -48,6 +56,24 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
 
     expect(screen.getByText('Service 1')).toBeTruthy()
+  })
+
+  it('shows the project name and unsaved marker after an edit', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+
+    expect(screen.getByRole('heading', { name: 'Test diagram *' })).toBeTruthy()
+  })
+
+  it('shows a save failure to the user', async () => {
+    window.owlframe.save = vi.fn(async () => {
+      throw new Error('Project folder is not writable')
+    })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Project folder is not writable')
   })
 
   it('shows feedback for an invalid connection', () => {
