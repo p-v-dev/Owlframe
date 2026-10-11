@@ -1,8 +1,35 @@
 @import 'tailwindcss';
 
+@keyframes node-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  65% {
+    box-shadow: 0 0 0 6px rgb(49 94 105 / 18%);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility animate-node-enter {
+  animation: node-enter 600ms ease-out both;
+}
+
 html,
 body,
 #root {
   height: 100%;
   margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

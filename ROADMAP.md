@@ -127,17 +127,17 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 
 **Objetivo:** aproximar o visual de diagramas modernos de arquitetura, em vez de apenas caixas ligadas por linhas.
 
-- [ ] Criar o tema padrão **Atlas Operacional**: canvas Survey claro, moldura Graphite, Harbor para estrutura, Moss para grupos, Cloud para superfícies elevadas e Signal Copper somente para foco, atenção e ação primária.
+- [x] Criar o tema padrão **Atlas Operacional**: canvas Survey claro, moldura Graphite, Harbor para estrutura, Moss para grupos, Cloud para superfícies elevadas e Signal Copper somente para foco, atenção e ação primária.
 - [ ] Empacotar localmente `Instrument Sans` para interface e `IBM Plex Mono` para precisão técnica antes de torná-las parte da identidade visual.
 - [ ] Criar uma paleta lateral de componentes (serviço, banco de dados, fila, gateway, cliente e grupo).
 - [ ] Adicionar ícones de tecnologias a partir de um catálogo local empacotado com o aplicativo.
 - [ ] Permitir personalizar título, descrição opcional, ícone e cor dos componentes.
-- [ ] Criar estilos de arestas (por exemplo, linha contínua, tracejada, seta e rótulo).
+- [x] Criar estilos de arestas (por exemplo, linha contínua, tracejada, seta e rótulo).
 - [ ] Permitir criar contêineres/grupos visuais (por exemplo, `VPC`, `Kubernetes Cluster`, `Docker Compose`).
-- [ ] Implementar alinhamento visual básico, grade opcional e _snap-to-grid_.
+- [x] Implementar alinhamento visual básico, grade opcional e _snap-to-grid_.
 - [ ] Construir um painel de propriedades contextual, sem poluir o canvas.
 - [ ] Implementar a assinatura de contorno na régua de altitude: densidade baixa no contexto, maior em serviços e trajetos direcionais finos em fluxos.
-- [ ] Garantir foco visível, contraste adequado e respeito a `prefers-reduced-motion` para controles, transições e movimentos do canvas.
+- [x] Garantir foco visível, contraste adequado e respeito a `prefers-reduced-motion` para controles, transições e movimentos do canvas.
 - [ ] Validar o resultado com dois exemplos reais: uma arquitetura web simples e uma arquitetura com microsserviços.
 
 **Critério de aceite:** diagramas novos ficam visualmente consistentes por padrão e o usuário consegue reproduzir, de forma aproximada, o estilo de um diagrama profissional de infraestrutura.

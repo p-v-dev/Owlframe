@@ -58,6 +58,13 @@ describe('App', () => {
     expect(screen.getByText('Service 1')).toBeTruthy()
   })
 
+  it('animates a newly added service', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+
+    expect(screen.getByTestId('service-node').className).toContain('animate-node-enter')
+  })
+
   it('shows the project name and unsaved marker after an edit', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
