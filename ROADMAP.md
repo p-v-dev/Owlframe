@@ -94,16 +94,16 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 
 **Objetivo:** tornar possível desenhar e modificar um diagrama visualmente.
 
-- [ ] Integrar React Flow à interface.
+- [x] Integrar React Flow à interface.
 - [ ] Criar a régua vertical de altitude para alternar entre vistas nomeadas sem confundi-la com a paleta de componentes.
-- [ ] Criar um nó visual padrão baseado no modelo de documento.
-- [ ] Adicionar nós por uma ação simples na interface.
+- [x] Criar um nó visual padrão baseado no modelo de documento.
+- [x] Adicionar nós por uma ação simples na interface.
 - [ ] Permitir mover, selecionar, renomear e excluir nós.
-- [ ] Permitir criar, selecionar e excluir conexões.
-- [ ] Implementar pan, zoom, _fit view_ e atalhos essenciais.
-- [ ] Sincronizar alterações com Zustand sem introduzir um segundo formato de documento como fonte de verdade.
-- [ ] Distinguir estado persistido do diagrama de estado efêmero de UI (seleção, menus, painéis).
-- [ ] Criar estado vazio e feedback para operações inválidas.
+- [x] Permitir criar, selecionar e excluir conexões.
+- [x] Implementar pan, zoom, _fit view_ e atalhos essenciais.
+- [x] Sincronizar alterações com Zustand sem introduzir um segundo formato de documento como fonte de verdade.
+- [x] Distinguir estado persistido do diagrama de estado efêmero de UI (seleção, menus, painéis).
+- [x] Criar estado vazio e feedback para operações inválidas.
 - [ ] Aplicar zoom semântico progressivo: ocultar detalhes secundários antes de reduzir a legibilidade de grupos e conexões principais.
 
 **Critério de aceite:** o usuário consegue montar e editar um pequeno diagrama com pelo menos cinco componentes conectados, sem editar JSON manualmente.

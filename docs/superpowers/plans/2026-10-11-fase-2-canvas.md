@@ -29,10 +29,12 @@
 ### Task 1: Add the editor store
 
 **Files:**
+
 - Create: `src/renderer/src/editor-store.ts`
 - Create: `src/renderer/src/editor-store.test.ts`
 
 **Interfaces:**
+
 - Produces: `useEditorStore`, with `document`, `selectedNodeIds`, `selectedEdgeIds`, `message`, `addService`, `moveNode`, `connect`, `removeSelection`, `setSelection`, and `clearMessage`.
 
 - [ ] **Step 1: Write the failing test**
@@ -59,11 +61,16 @@ Expected: FAIL because `editor-store` does not exist.
 ```ts
 export const useEditorStore = create<EditorState>((set, get) => ({
   document: createEmptyDocument('untitled', 'Untitled diagram'),
-  selectedNodeIds: [], selectedEdgeIds: [], message: '',
-  addService: () => { /* addNode with crypto.randomUUID() */ },
-  moveNode: (id, position) => set(({ document }) => ({
-    document: updateNode(document, 'view-contexto', id, { position })
-  }))
+  selectedNodeIds: [],
+  selectedEdgeIds: [],
+  message: '',
+  addService: () => {
+    /* addNode with crypto.randomUUID() */
+  },
+  moveNode: (id, position) =>
+    set(({ document }) => ({
+      document: updateNode(document, 'view-contexto', id, { position })
+    }))
 }))
 ```
 
@@ -82,10 +89,12 @@ git add src/renderer/src/editor-store.ts src/renderer/src/editor-store.test.ts
 ### Task 2: Render and edit Contexto
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx`
 - Modify: `src/renderer/src/App.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `useEditorStore` actions and the Contexto document view.
 - Produces: an accessible Add service action, custom service nodes and visible operation feedback.
 
@@ -115,7 +124,12 @@ Expected: FAIL because the action does not exist.
   nodeTypes={{ service: ServiceNode }}
   onNodeDragStop={(_, node) => moveNode(node.id, node.position)}
   onConnect={({ source, target }) => connect(source, target)}
-  onSelectionChange={({ nodes, edges }) => setSelection(nodes.map(({ id }) => id), edges.map(({ id }) => id))}
+  onSelectionChange={({ nodes, edges }) =>
+    setSelection(
+      nodes.map(({ id }) => id),
+      edges.map(({ id }) => id)
+    )
+  }
   fitView
 >
   <Controls />
@@ -138,6 +152,7 @@ git add src/renderer/src/App.tsx src/renderer/src/App.test.tsx
 ### Task 3: Update the roadmap and verify
 
 **Files:**
+
 - Modify: `ROADMAP.md`
 
 - [ ] **Step 1: Mark implemented scope only**
