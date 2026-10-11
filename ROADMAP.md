@@ -18,6 +18,16 @@ O foco é **diagramas bonitos e práticos**, não competir com o Figma ou implem
 - **Open source de verdade:** documentação, licença, testes e releases instaláveis.
 - **MCP é uma extensão futura:** não criar infraestrutura de IA durante o MVP.
 
+### Direção visual: atlas operacional
+
+- **Objetivo visual:** um projeto deve poder ser lido em múltiplas altitudes, do contexto de infraestrutura ao fluxo entre componentes.
+- **Vistas nomeadas:** um projeto contém vistas independentes, como `Contexto`, `Sistema`, `Serviços` e `Fluxo de pedidos`; cada uma preserva o próprio canvas e viewport.
+- **Zoom semântico:** ao afastar, a interface prioriza grupos e relações; ao aproximar, revela componentes e conexões detalhadas, sem criar nem alterar vistas.
+- **Linguagem:** canvas mineral claro (`Survey #E8ECE7`), moldura em grafite (`Graphite #162127`) e uma única cor de sinal por vista; `Signal Copper #C85F30` é reservado para foco, atenção e ação primária.
+- **Assinatura:** uma régua vertical de altitude alterna vistas e mostra uma linha de contorno cuja densidade comunica o nível de abstração ativo.
+- **Legibilidade:** nós, grupos e arestas devem ser distinguíveis sem depender só de cor; foco visível, contraste adequado e `prefers-reduced-motion` são obrigatórios.
+- **Offline:** fontes de interface e precisão devem ser empacotadas localmente quando adotadas; não depender de fontes ou ativos remotos.
+
 ## Stack
 
 | Camada            | Tecnologia               | Responsabilidade                                     |
@@ -70,11 +80,11 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 
 **Objetivo:** definir o formato do diagrama antes de acoplá-lo à interface.
 
-- [ ] Definir um formato JSON versionado, por exemplo `schemaVersion`, `metadata`, `nodes`, `edges` e `viewport`.
-- [ ] Definir tipos de nós, conexões, posição, rótulos, propriedades visuais e grupos sem importar tipos do React Flow na camada de domínio.
+- [ ] Definir um formato JSON versionado com `schemaVersion`, `metadata` e `views`; cada vista armazena `id`, nome, altitude, `nodes`, `edges` e `viewport`.
+- [ ] Definir os tipos de altitude (`contexto`, `sistema`, `servicos`, `fluxo`) e os tipos de nós, conexões, posição, rótulos, propriedades visuais e grupos sem importar tipos do React Flow na camada de domínio.
 - [ ] Criar funções puras para adicionar, atualizar e remover nós e arestas.
 - [ ] Garantir IDs estáveis e impedir referências inválidas (como conexão para nó inexistente).
-- [ ] Definir valores padrão de estilo e um documento inicial vazio.
+- [ ] Definir valores padrão de estilo, uma vista inicial `Contexto` e um documento inicial vazio.
 - [ ] Implementar validação na leitura de arquivos (incluindo versão do formato e mensagens úteis de erro).
 - [ ] Criar testes unitários cobrindo operações, integridade e serialização.
 
@@ -85,6 +95,7 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 **Objetivo:** tornar possível desenhar e modificar um diagrama visualmente.
 
 - [ ] Integrar React Flow à interface.
+- [ ] Criar a régua vertical de altitude para alternar entre vistas nomeadas sem confundi-la com a paleta de componentes.
 - [ ] Criar um nó visual padrão baseado no modelo de documento.
 - [ ] Adicionar nós por uma ação simples na interface.
 - [ ] Permitir mover, selecionar, renomear e excluir nós.
@@ -93,6 +104,7 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 - [ ] Sincronizar alterações com Zustand sem introduzir um segundo formato de documento como fonte de verdade.
 - [ ] Distinguir estado persistido do diagrama de estado efêmero de UI (seleção, menus, painéis).
 - [ ] Criar estado vazio e feedback para operações inválidas.
+- [ ] Aplicar zoom semântico progressivo: ocultar detalhes secundários antes de reduzir a legibilidade de grupos e conexões principais.
 
 **Critério de aceite:** o usuário consegue montar e editar um pequeno diagrama com pelo menos cinco componentes conectados, sem editar JSON manualmente.
 
@@ -115,7 +127,8 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 
 **Objetivo:** aproximar o visual de diagramas modernos de arquitetura, em vez de apenas caixas ligadas por linhas.
 
-- [ ] Criar um tema visual padrão **Dark**, com contraste e espaçamento consistentes.
+- [ ] Criar o tema padrão **Atlas Operacional**: canvas Survey claro, moldura Graphite, Harbor para estrutura, Moss para grupos, Cloud para superfícies elevadas e Signal Copper somente para foco, atenção e ação primária.
+- [ ] Empacotar localmente `Instrument Sans` para interface e `IBM Plex Mono` para precisão técnica antes de torná-las parte da identidade visual.
 - [ ] Criar uma paleta lateral de componentes (serviço, banco de dados, fila, gateway, cliente e grupo).
 - [ ] Adicionar ícones de tecnologias a partir de um catálogo local empacotado com o aplicativo.
 - [ ] Permitir personalizar título, descrição opcional, ícone e cor dos componentes.
@@ -123,6 +136,8 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 - [ ] Permitir criar contêineres/grupos visuais (por exemplo, `VPC`, `Kubernetes Cluster`, `Docker Compose`).
 - [ ] Implementar alinhamento visual básico, grade opcional e _snap-to-grid_.
 - [ ] Construir um painel de propriedades contextual, sem poluir o canvas.
+- [ ] Implementar a assinatura de contorno na régua de altitude: densidade baixa no contexto, maior em serviços e trajetos direcionais finos em fluxos.
+- [ ] Garantir foco visível, contraste adequado e respeito a `prefers-reduced-motion` para controles, transições e movimentos do canvas.
 - [ ] Validar o resultado com dois exemplos reais: uma arquitetura web simples e uma arquitetura com microsserviços.
 
 **Critério de aceite:** diagramas novos ficam visualmente consistentes por padrão e o usuário consegue reproduzir, de forma aproximada, o estilo de um diagrama profissional de infraestrutura.
