@@ -1,7 +1,7 @@
 export const SCHEMA_VERSION = 1
 
 export type DiagramAltitude = 'contexto' | 'sistema' | 'servicos' | 'fluxo'
-export type DiagramNodeKind = 'service' | 'database' | 'queue' | 'gateway' | 'client'
+export type DiagramNodeKind = 'service' | 'database' | 'queue' | 'gateway' | 'client' | 'container'
 export type DiagramEdgeStyle = 'solid' | 'dashed'
 
 export interface DiagramMetadata {

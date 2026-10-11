@@ -3,7 +3,9 @@ import {
   createEmptyDocument,
   type DiagramDocument,
   type DiagramPosition,
-  type DiagramView
+  type DiagramView,
+  type DiagramNodeKind,
+  type DiagramStyle
 } from '../../core/document'
 import { addEdge, addNode, removeEdge, removeNode, updateNode } from '../../core/operations'
 
@@ -17,6 +19,12 @@ interface EditorState {
   selectedEdgeIds: string[]
   message: string
   addService: () => void
+  addComponent: (kind: DiagramNodeKind) => void
+  updateSelectedNode: (patch: {
+    label?: string
+    kind?: DiagramNodeKind
+    style?: DiagramStyle
+  }) => void
   moveNode: (nodeId: string, position: DiagramPosition) => void
   connect: (sourceId: string | null, targetId: string | null) => void
   setSelection: (nodeIds: string[], edgeIds: string[]) => void
@@ -53,20 +61,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedEdgeIds: [],
   message: '',
   addService: () => {
+    get().addComponent('service')
+  },
+  addComponent: (kind) => {
     const view = getView(get().document)
     const number = view.nodes.length + 1
+    const label = `${kind[0].toUpperCase()}${kind.slice(1)} ${number}`
 
     set({
       document: addNode(get().document, viewId, {
         id: crypto.randomUUID(),
-        kind: 'service',
-        label: `Service ${number}`,
+        kind,
+        label,
         position: { x: 80 + (number - 1) * 48, y: 80 + (number - 1) * 48 },
-        style: { color: '#64748b' }
+        style: { color: '#315B68' }
       }),
       dirty: true,
       message: ''
     })
+  },
+  updateSelectedNode: (patch) => {
+    const nodeId = get().selectedNodeIds[0]
+    if (!nodeId) return
+    set(({ document }) => ({ document: updateNode(document, viewId, nodeId, patch), dirty: true }))
   },
   moveNode: (nodeId, position) =>
     set(({ document }) => ({

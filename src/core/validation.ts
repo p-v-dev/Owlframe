@@ -7,7 +7,14 @@ import {
 } from './document'
 
 const altitudes: DiagramAltitude[] = ['contexto', 'sistema', 'servicos', 'fluxo']
-const nodeKinds: DiagramNodeKind[] = ['service', 'database', 'queue', 'gateway', 'client']
+const nodeKinds: DiagramNodeKind[] = [
+  'service',
+  'database',
+  'queue',
+  'gateway',
+  'client',
+  'container'
+]
 const edgeStyles: DiagramEdgeStyle[] = ['solid', 'dashed']
 
 export type DocumentValidationResult =
