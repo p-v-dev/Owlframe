@@ -12,6 +12,7 @@ import '@xyflow/react/dist/style.css'
 import { Box, Database, Globe, Layers, Server, Waypoints } from 'lucide-react'
 import { siDocker, siGo, siNodedotjs, siPostgresql, siRedis } from 'simple-icons'
 import type { DiagramAltitude, DiagramNodeKind } from '../../core/document'
+import { createDiagramSvg, createPngBlob } from './diagram-export'
 import { useEditorStore } from './editor-store'
 
 const techIcons = {
@@ -77,6 +78,8 @@ function App(): React.JSX.Element {
   const state = useEditorStore()
   const view = state.getActiveView()
   const [viewport, setViewport] = useState(view.viewport)
+  const [exportBackground, setExportBackground] = useState<'theme' | 'transparent'>('theme')
+  const [pngScale, setPngScale] = useState<1 | 2 | 3>(2)
   useEffect(() => setViewport(view.viewport), [view.viewport])
   const compact = viewport.zoom < 0.65
   const nodes = useMemo<
@@ -108,6 +111,17 @@ function App(): React.JSX.Element {
     [view.edges]
   )
   const selected = view.nodes.find((node) => node.id === state.selectedNodeIds[0])
+  const download = (blob: Blob, extension: 'svg' | 'png'): void => {
+    const anchor = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    anchor.href = url
+    anchor.download = `${state.document.metadata.name.replace(/[^a-z0-9]+/gi, '-')}.${extension}`
+    document.body.append(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }
+  const svg = (): string => createDiagramSvg(view, { background: exportBackground })
 
   return (
     <main className="flex min-h-screen flex-col bg-[#E8ECE7] text-[#162127]">
@@ -154,6 +168,43 @@ function App(): React.JSX.Element {
             type="button"
           >
             Add service
+          </button>
+          <label className="text-xs">
+            Export background
+            <select
+              className="ml-1 border bg-[#F8F7F2] p-1 text-[#162127]"
+              onChange={(event) => setExportBackground(event.target.value as 'theme' | 'transparent')}
+              value={exportBackground}
+            >
+              <option value="theme">Theme</option>
+              <option value="transparent">Transparent</option>
+            </select>
+          </label>
+          <label className="text-xs">
+            PNG scale
+            <select
+              className="ml-1 border bg-[#F8F7F2] p-1 text-[#162127]"
+              onChange={(event) => setPngScale(Number(event.target.value) as 1 | 2 | 3)}
+              value={pngScale}
+            >
+              <option value="1">1x</option>
+              <option value="2">2x</option>
+              <option value="3">3x</option>
+            </select>
+          </label>
+          <button
+            className="rounded-sm border border-[#8DA59A] px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C85F30]"
+            onClick={() => download(new Blob([svg()], { type: 'image/svg+xml' }), 'svg')}
+            type="button"
+          >
+            Export SVG
+          </button>
+          <button
+            className="rounded-sm border border-[#8DA59A] px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C85F30]"
+            onClick={async () => download(await createPngBlob(svg(), pngScale), 'png')}
+            type="button"
+          >
+            Export PNG
           </button>
         </div>
       </header>

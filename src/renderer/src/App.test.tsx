@@ -104,6 +104,15 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Add service' })).toBeTruthy()
   })
 
+  it('offers export actions with background and PNG scale controls', () => {
+    render(<App />)
+
+    expect(screen.getByRole('button', { name: 'Export SVG' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Export PNG' })).toBeTruthy()
+    expect(screen.getByLabelText('Export background')).toBeTruthy()
+    expect(screen.getByLabelText('PNG scale')).toBeTruthy()
+  })
+
   it('switches the active altitude view from the ruler', () => {
     render(<App />)
 
