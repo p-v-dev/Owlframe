@@ -7,6 +7,7 @@ function resetStore(): void {
     document: createEmptyDocument('test', 'Test diagram'),
     path: undefined,
     dirty: false,
+    activeViewId: 'view-contexto',
     selectedNodeIds: [],
     selectedEdgeIds: [],
     message: ''
@@ -54,5 +55,43 @@ describe('editor store', () => {
 
     expect(useEditorStore.getState().message).toBe('Choose two different services to connect.')
     expect(useEditorStore.getState().document.views[0].edges).toEqual([])
+  })
+
+  it('keeps a Contexto edit out of Sistema after switching views', () => {
+    useEditorStore.getState().addService()
+    useEditorStore.getState().setActiveView('view-sistema')
+
+    expect(useEditorStore.getState().getActiveView().nodes).toEqual([])
+  })
+
+  it('retains nodes when their group is removed', () => {
+    useEditorStore.getState().addService()
+    const node = useEditorStore.getState().getActiveView().nodes[0]
+    useEditorStore.getState().addGroup()
+    const group = useEditorStore.getState().getActiveView().groups[0]
+    useEditorStore.getState().assignNodeToGroup(node.id, group.id)
+
+    useEditorStore.getState().removeGroups([group.id])
+
+    expect(useEditorStore.getState().getActiveView().nodes).toEqual([
+      expect.objectContaining({ id: node.id, groupId: undefined })
+    ])
+  })
+
+  it('sets the viewport on only the active view', () => {
+    useEditorStore.getState().setActiveView('view-sistema')
+    useEditorStore.getState().setViewport({ x: 24, y: 48, zoom: 1.5 })
+
+    expect(
+      useEditorStore.getState().document.views.map((view) => ({
+        id: view.id,
+        viewport: view.viewport
+      }))
+    ).toEqual([
+      { id: 'view-contexto', viewport: { x: 0, y: 0, zoom: 1 } },
+      { id: 'view-sistema', viewport: { x: 24, y: 48, zoom: 1.5 } },
+      { id: 'view-servicos', viewport: { x: 0, y: 0, zoom: 1 } },
+      { id: 'view-fluxo', viewport: { x: 0, y: 0, zoom: 1 } }
+    ])
   })
 })

@@ -2,24 +2,42 @@ import { create } from 'zustand'
 import {
   createEmptyDocument,
   type DiagramDocument,
+  type DiagramGroup,
   type DiagramPosition,
   type DiagramView,
   type DiagramNodeKind,
-  type DiagramStyle
+  type DiagramStyle,
+  type DiagramViewport
 } from '../../core/document'
-import { addEdge, addNode, removeEdge, removeNode, updateNode } from '../../core/operations'
-
-const viewId = 'view-contexto'
+import {
+  addEdge,
+  addGroup,
+  addNode,
+  removeEdge,
+  removeGroup,
+  removeNode,
+  updateGroup,
+  updateNode,
+  updateView
+} from '../../core/operations'
 
 interface EditorState {
   document: DiagramDocument
   path?: string
   dirty: boolean
+  activeViewId: string
   selectedNodeIds: string[]
   selectedEdgeIds: string[]
   message: string
+  getActiveView: () => DiagramView
+  setActiveView: (viewId: string) => void
   addService: () => void
   addComponent: (kind: DiagramNodeKind) => void
+  addGroup: () => void
+  updateSelectedGroup: (patch: Partial<Omit<DiagramGroup, 'id'>>) => void
+  removeGroups: (ids: string[]) => void
+  assignNodeToGroup: (nodeId: string, groupId: string | undefined) => void
+  setViewport: (viewport: DiagramViewport) => void
   updateSelectedNode: (patch: {
     label?: string
     kind?: DiagramNodeKind
@@ -37,8 +55,8 @@ interface EditorState {
   saveAs: () => Promise<void>
 }
 
-function getView(document: DiagramDocument): DiagramView {
-  return document.views.find((view) => view.id === viewId)!
+function getActiveView(document: DiagramDocument, activeViewId: string): DiagramView {
+  return document.views.find((view) => view.id === activeViewId)!
 }
 
 function sameIds(left: string[], right: string[]): boolean {
@@ -57,19 +75,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   document: createEmptyDocument('untitled', 'Untitled diagram'),
   path: undefined,
   dirty: false,
+  activeViewId: 'view-contexto',
   selectedNodeIds: [],
   selectedEdgeIds: [],
   message: '',
+  getActiveView: () => getActiveView(get().document, get().activeViewId),
+  setActiveView: (activeViewId) => {
+    if (!get().document.views.some((view) => view.id === activeViewId)) return
+    set({ activeViewId, selectedNodeIds: [], selectedEdgeIds: [] })
+  },
   addService: () => {
     get().addComponent('service')
   },
   addComponent: (kind) => {
-    const view = getView(get().document)
+    const { document, activeViewId } = get()
+    const view = getActiveView(document, activeViewId)
     const number = view.nodes.length + 1
     const label = `${kind[0].toUpperCase()}${kind.slice(1)} ${number}`
 
     set({
-      document: addNode(get().document, viewId, {
+      document: addNode(document, activeViewId, {
         id: crypto.randomUUID(),
         kind,
         label,
@@ -83,15 +108,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   updateSelectedNode: (patch) => {
     const nodeId = get().selectedNodeIds[0]
     if (!nodeId) return
-    set(({ document }) => ({ document: updateNode(document, viewId, nodeId, patch), dirty: true }))
+    set(({ document, activeViewId }) => ({
+      document: updateNode(document, activeViewId, nodeId, patch),
+      dirty: true
+    }))
   },
   moveNode: (nodeId, position) =>
-    set(({ document }) => ({
-      document: updateNode(document, viewId, nodeId, { position }),
+    set(({ document, activeViewId }) => ({
+      document: updateNode(document, activeViewId, nodeId, { position }),
       dirty: true
     })),
   connect: (sourceId, targetId) => {
-    const view = getView(get().document)
+    const { document, activeViewId } = get()
+    const view = getActiveView(document, activeViewId)
     if (!sourceId || !targetId || sourceId === targetId) {
       set({ message: 'Choose two different services to connect.' })
       return
@@ -103,7 +132,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     try {
       set({
-        document: addEdge(get().document, viewId, {
+        document: addEdge(document, activeViewId, {
           id: crypto.randomUUID(),
           sourceId,
           targetId,
@@ -116,6 +145,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       set({ message: 'Choose two services that exist in this diagram.' })
     }
   },
+  addGroup: () => {
+    const { document, activeViewId } = get()
+    const number = getActiveView(document, activeViewId).groups.length + 1
+    set({
+      document: addGroup(document, activeViewId, {
+        id: crypto.randomUUID(),
+        label: `Group ${number}`,
+        position: { x: 48, y: 48 },
+        width: 360,
+        height: 240,
+        style: { color: '#8DA59A' }
+      }),
+      dirty: true,
+      message: ''
+    })
+  },
+  updateSelectedGroup: (patch) => {
+    const groupId = get().selectedNodeIds[0]
+    if (!groupId) return
+    set(({ document, activeViewId }) => ({
+      document: updateGroup(document, activeViewId, groupId, patch),
+      dirty: true
+    }))
+  },
+  removeGroups: (ids) => {
+    const activeViewId = get().activeViewId
+    let next = get().document
+    for (const id of ids) next = removeGroup(next, activeViewId, id)
+    set({ document: next, dirty: true })
+  },
+  assignNodeToGroup: (nodeId, groupId) =>
+    set(({ document, activeViewId }) => ({
+      document: updateNode(document, activeViewId, nodeId, { groupId }),
+      dirty: true
+    })),
+  setViewport: (viewport) =>
+    set(({ document, activeViewId }) => ({
+      document: updateView(document, activeViewId, { viewport }),
+      dirty: true
+    })),
   setSelection: (selectedNodeIds, selectedEdgeIds) => {
     const current = get()
     if (
@@ -127,25 +196,27 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ selectedNodeIds, selectedEdgeIds })
   },
   removeSelection: () => {
-    const { document, selectedNodeIds, selectedEdgeIds } = get()
+    const { document, activeViewId, selectedNodeIds, selectedEdgeIds } = get()
     let next = document
-    for (const nodeId of selectedNodeIds) next = removeNode(next, viewId, nodeId)
+    for (const nodeId of selectedNodeIds) next = removeNode(next, activeViewId, nodeId)
     for (const edgeId of selectedEdgeIds) {
-      if (getView(next).edges.some((edge) => edge.id === edgeId))
-        next = removeEdge(next, viewId, edgeId)
+      if (getActiveView(next, activeViewId).edges.some((edge) => edge.id === edgeId))
+        next = removeEdge(next, activeViewId, edgeId)
     }
     set({ document: next, dirty: true, selectedNodeIds: [], selectedEdgeIds: [] })
   },
   removeNodes: (nodeIds) => {
+    const activeViewId = get().activeViewId
     let next = get().document
-    for (const nodeId of nodeIds) next = removeNode(next, viewId, nodeId)
+    for (const nodeId of nodeIds) next = removeNode(next, activeViewId, nodeId)
     set({ document: next, dirty: true, selectedNodeIds: [], selectedEdgeIds: [] })
   },
   removeEdges: (edgeIds) => {
+    const activeViewId = get().activeViewId
     let next = get().document
     for (const edgeId of edgeIds) {
-      if (getView(next).edges.some((edge) => edge.id === edgeId))
-        next = removeEdge(next, viewId, edgeId)
+      if (getActiveView(next, activeViewId).edges.some((edge) => edge.id === edgeId))
+        next = removeEdge(next, activeViewId, edgeId)
     }
     set({ document: next, dirty: true, selectedEdgeIds: [] })
   },
@@ -157,6 +228,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         document,
         path: undefined,
         dirty: false,
+        activeViewId: document.views[0].id,
         selectedNodeIds: [],
         selectedEdgeIds: [],
         message: ''
@@ -174,6 +246,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           document: result.document,
           path: result.path,
           dirty: false,
+          activeViewId: result.document.views[0].id,
           selectedNodeIds: [],
           selectedEdgeIds: [],
           message: ''
