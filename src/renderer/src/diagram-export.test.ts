@@ -35,7 +35,9 @@ const view: DiagramView = {
       style: { color: '#C85F30' }
     }
   ],
-  edges: [{ id: 'edge-1', sourceId: 'source', targetId: 'target', style: 'solid' }]
+  edges: [
+    { id: 'edge-1', sourceId: 'source', targetId: 'target', label: 'API <sync>', style: 'dashed' }
+  ]
 }
 
 afterEach(() => vi.restoreAllMocks())
@@ -54,6 +56,8 @@ describe('diagram export', () => {
     expect(svg).toContain('<rect x="40" y="80" width="176" height="56"')
     expect(svg).toContain('marker-end="url(#arrow)"')
     expect(svg).toContain('fill="none"')
+    expect(svg).toContain('stroke-dasharray="6 4"')
+    expect(svg).toContain('API &lt;sync&gt;')
     expect(svg).not.toContain('#E8ECE7')
   })
 

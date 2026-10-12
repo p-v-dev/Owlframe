@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Background,
   Controls,
@@ -69,11 +69,15 @@ const contourPaths: Record<DiagramAltitude, string[]> = {
 function App(): React.JSX.Element {
   const state = useEditorStore()
   const view = state.getActiveView()
-  const [viewport, setViewport] = useState(view.viewport)
+  const [viewport, setViewport] = useState({
+    documentId: state.document.metadata.id,
+    value: view.viewport
+  })
   const [exportBackground, setExportBackground] = useState<'theme' | 'transparent'>('theme')
   const [pngScale, setPngScale] = useState<1 | 2 | 3>(2)
-  useEffect(() => setViewport(view.viewport), [view.viewport])
-  const compact = viewport.zoom < 0.65
+  const activeViewport =
+    viewport.documentId === state.document.metadata.id ? viewport.value : view.viewport
+  const compact = activeViewport.zoom < 0.65
   const nodes = useMemo<
     Node<{
       label: string
@@ -99,10 +103,18 @@ function App(): React.JSX.Element {
     [compact, view.nodes]
   )
   const edges = useMemo(
-    () => view.edges.map((edge) => ({ id: edge.id, source: edge.sourceId, target: edge.targetId })),
+    () =>
+      view.edges.map((edge) => ({
+        id: edge.id,
+        source: edge.sourceId,
+        target: edge.targetId,
+        label: edge.label,
+        style: edge.style === 'dashed' ? { strokeDasharray: '6 4' } : undefined
+      })),
     [view.edges]
   )
   const selected = view.nodes.find((node) => node.id === state.selectedNodeIds[0])
+  const selectedGroup = view.groups.find((group) => group.id === state.selectedGroupIds[0])
   const download = (blob: Blob, extension: 'svg' | 'png'): void => {
     const anchor = document.createElement('a')
     const url = URL.createObjectURL(blob)
@@ -165,7 +177,9 @@ function App(): React.JSX.Element {
             Export background
             <select
               className="ml-1 border bg-[#F8F7F2] p-1 text-[#162127]"
-              onChange={(event) => setExportBackground(event.target.value as 'theme' | 'transparent')}
+              onChange={(event) =>
+                setExportBackground(event.target.value as 'theme' | 'transparent')
+              }
               value={exportBackground}
             >
               <option value="theme">Theme</option>
@@ -217,7 +231,7 @@ function App(): React.JSX.Element {
               key={candidate.id}
               onClick={() => {
                 state.setActiveView(candidate.id)
-                setViewport(candidate.viewport)
+                setViewport({ documentId: state.document.metadata.id, value: candidate.viewport })
               }}
               type="button"
             >
@@ -247,7 +261,41 @@ function App(): React.JSX.Element {
             </button>
           ))}
         </aside>
-        {selected && (
+        {selectedGroup && (
+          <aside className="properties-panel" aria-label="Properties">
+            <label className="block text-xs">
+              Group title
+              <input
+                className="mt-1 w-full border p-1"
+                value={selectedGroup.label}
+                onChange={(event) => state.updateSelectedGroup({ label: event.target.value })}
+              />
+            </label>
+            <label className="block text-xs">
+              Group color
+              <input
+                className="mt-1 w-full"
+                type="color"
+                value={selectedGroup.style.color}
+                onChange={(event) =>
+                  state.updateSelectedGroup({
+                    style: { ...selectedGroup.style, color: event.target.value }
+                  })
+                }
+              />
+            </label>
+            <button
+              onClick={() => state.assignSelectedNodesToGroup(selectedGroup.id)}
+              type="button"
+            >
+              Assign selected nodes
+            </button>
+            <button onClick={() => state.removeGroups([selectedGroup.id])} type="button">
+              Delete group
+            </button>
+          </aside>
+        )}
+        {selected && !selectedGroup && (
           <aside className="properties-panel" aria-label="Properties">
             <label className="block text-xs">
               Name
@@ -313,16 +361,16 @@ function App(): React.JSX.Element {
           </p>
         )}
         <div
-          aria-hidden="true"
           className="group-layer"
           style={{
-            transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`
+            transform: `translate(${activeViewport.x}px, ${activeViewport.y}px) scale(${activeViewport.zoom})`
           }}
         >
           {view.groups.map((group) => (
-            <div
+            <button
               className="diagram-group"
               key={group.id}
+              onClick={() => state.selectGroup(group.id)}
               style={{
                 borderColor: group.style.color,
                 height: group.height,
@@ -330,9 +378,10 @@ function App(): React.JSX.Element {
                 top: group.position.y,
                 width: group.width
               }}
+              type="button"
             >
               {group.label}
-            </div>
+            </button>
           ))}
         </div>
         <ReactFlow
@@ -348,9 +397,11 @@ function App(): React.JSX.Element {
           onConnect={({ source, target }) => state.connect(source, target)}
           onEdgesDelete={(deleted) => state.removeEdges(deleted.map((edge) => edge.id))}
           onNodeDragStop={(_, node) => state.moveNode(node.id, node.position)}
-          onMove={(_, nextViewport) => setViewport(nextViewport)}
+          onMove={(_, nextViewport) =>
+            setViewport({ documentId: state.document.metadata.id, value: nextViewport })
+          }
           onMoveEnd={(_, viewport) => {
-            setViewport(viewport)
+            setViewport({ documentId: state.document.metadata.id, value: viewport })
             state.setViewport(viewport)
           }}
           onNodesDelete={(deleted) => state.removeNodes(deleted.map((node) => node.id))}
@@ -360,7 +411,7 @@ function App(): React.JSX.Element {
               selectedEdges.map((edge) => edge.id)
             )
           }
-          viewport={viewport}
+          viewport={activeViewport}
         >
           <Background color="#8DA59A" gap={16} size={1} />
           <Controls />

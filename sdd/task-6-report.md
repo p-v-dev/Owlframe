@@ -141,3 +141,57 @@ All scoped formatting checks passed.
 ```
 
 `App.tsx` retains its pre-existing `react-hooks/set-state-in-effect` lint error at line 75. The icon catalog extraction does not touch that effect.
+
+## Final Review Fixes
+
+### Root Causes
+
+- Groups were rendered as an `aria-hidden`, pointer-suppressed decoration. The editor store also attempted group updates using `selectedNodeIds`, so a group could never become an editable selection.
+- React Flow edges were reduced to IDs and endpoints, discarding the persisted `style` and optional `label` fields.
+- SVG export emitted edge geometry but not the persisted label.
+- `App` copied the active view viewport into local state in a synchronous effect, which triggered `react-hooks/set-state-in-effect`.
+
+### Changes
+
+- Added separate ephemeral group selection. Clickable group buttons open a contextual group panel with editable title and color, assign the currently selected nodes, and delete the selected group. The group layer is no longer hidden from assistive technology or pointer-suppressed.
+- Kept persisted edge metadata when mapping to React Flow. Dashed edges use `strokeDasharray: '6 4'`; labels are passed through to React Flow.
+- SVG/PNG exports render escaped edge labels at each edge midpoint while retaining dashed styling.
+- Replaced the viewport synchronization effect with a document-ID-tagged transient viewport value. A replacement document renders its persisted viewport immediately, while in-progress canvas movement remains local until `onMoveEnd` persists it.
+- `ROADMAP.md` was not changed: the existing completed group, edge-style, and export checklist items are accurate after these fixes.
+
+### TDD Evidence
+
+1. Added the group editing/assignment/deletion and React Flow edge mapping regressions to `App.test.tsx`, plus an escaped edge-label assertion to `diagram-export.test.ts`.
+2. RED commands:
+
+   ```text
+   npm test -- src/renderer/src/App.test.tsx
+   npm test -- src/renderer/src/diagram-export.test.ts
+   ```
+
+3. RED results: group controls were absent, React Flow received only edge IDs/endpoints, and SVG output omitted `API &lt;sync&gt;`.
+4. Implemented the focused store, renderer, export, and viewport changes.
+5. GREEN results: focused App/store tests passed 20/20; export tests passed 5/5.
+
+### Final Verification
+
+```text
+npm test
+Test Files  8 passed (8)
+Tests       58 passed (58)
+```
+
+```text
+npm run typecheck
+Exit status: 0
+```
+
+```text
+npm run lint
+Exit status: 0; 941 pre-existing Prettier CRLF warnings, 0 errors.
+```
+
+```text
+npx prettier --check src/renderer/src/App.tsx src/renderer/src/App.test.tsx src/renderer/src/editor-store.ts src/renderer/src/diagram-export.ts src/renderer/src/diagram-export.test.ts src/renderer/src/assets/main.css
+All changed source and test files use Prettier code style.
+```

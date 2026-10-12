@@ -17,6 +17,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     ReactFlow: ({
       children,
       defaultViewport,
+      edges,
       nodeTypes,
       nodes,
       onMove,
@@ -24,6 +25,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     }: {
       children?: ReactNode
       defaultViewport?: { x: number; y: number; zoom: number }
+      edges?: { id: string; label?: string; style?: { strokeDasharray?: string } }[]
       nodeTypes?: Record<
         string,
         ComponentType<{
@@ -44,6 +46,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
       return (
         <div
           data-testid="react-flow"
+          data-edges={JSON.stringify(edges)}
           data-viewport={`${activeViewport?.x},${activeViewport?.y},${activeViewport?.zoom}`}
           onMouseMove={() => onMove?.(null, { x: 24, y: 48, zoom: 0.5 })}
         >
@@ -127,6 +130,64 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add group' }))
 
     expect(useEditorStore.getState().getActiveView().groups).toHaveLength(1)
+  })
+
+  it('edits, assigns nodes to, and deletes a selected visual group', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    const node = useEditorStore.getState().getActiveView().nodes[0]
+    act(() => useEditorStore.getState().setSelection([node.id], []))
+    fireEvent.click(screen.getByRole('button', { name: 'Add group' }))
+
+    const group = screen.getByText('Group 1')
+    fireEvent.click(group)
+
+    expect(group.closest('.group-layer')?.getAttribute('aria-hidden')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Group title'), { target: { value: 'Platform' } })
+    fireEvent.change(screen.getByLabelText('Group color'), { target: { value: '#c85f30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Assign selected nodes' }))
+
+    expect(useEditorStore.getState().getActiveView().nodes[0].groupId).toBe(
+      useEditorStore.getState().getActiveView().groups[0].id
+    )
+    expect(useEditorStore.getState().getActiveView().groups[0]).toMatchObject({
+      label: 'Platform',
+      style: { color: '#c85f30' }
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete group' }))
+
+    expect(useEditorStore.getState().getActiveView().groups).toEqual([])
+  })
+
+  it('renders persisted dashed edges and labels in React Flow', () => {
+    const document = createEmptyDocument('edge', 'Edge diagram')
+    document.views[0].nodes = [
+      {
+        id: 'source',
+        kind: 'service',
+        label: 'Source',
+        position: { x: 0, y: 0 },
+        style: { color: '#315B68' }
+      },
+      {
+        id: 'target',
+        kind: 'service',
+        label: 'Target',
+        position: { x: 100, y: 0 },
+        style: { color: '#315B68' }
+      }
+    ]
+    document.views[0].edges = [
+      { id: 'edge-1', sourceId: 'source', targetId: 'target', label: 'async', style: 'dashed' }
+    ]
+    useEditorStore.setState({ document })
+
+    render(<App />)
+
+    expect(screen.getByTestId('react-flow').dataset.edges).toBe(
+      '[{"id":"edge-1","source":"source","target":"target","label":"async","style":{"strokeDasharray":"6 4"}}]'
+    )
   })
 
   it('restores the replacement document viewport for the unchanged active view', async () => {

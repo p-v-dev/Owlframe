@@ -65,7 +65,9 @@ body {
   align-items: center;
   gap: 0.5rem;
   color: #315b68;
-  font: 0.75rem 'IBM Plex Mono', monospace;
+  font:
+    0.75rem 'IBM Plex Mono',
+    monospace;
 }
 
 .altitude-view svg {
@@ -104,9 +106,8 @@ body {
 
 .group-layer {
   position: absolute;
-  z-index: 0;
+  z-index: 3;
   transform-origin: 0 0;
-  pointer-events: none;
 }
 
 .diagram-group {
@@ -116,7 +117,11 @@ body {
   background: rgb(141 165 154 / 12%);
   color: #315b68;
   padding: 0.5rem;
-  font: 0.75rem 'IBM Plex Mono', monospace;
+  font:
+    0.75rem 'IBM Plex Mono',
+    monospace;
+  cursor: pointer;
+  text-align: left;
 }
 
 button:focus-visible,

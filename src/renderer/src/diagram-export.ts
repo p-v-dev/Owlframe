@@ -56,7 +56,14 @@ export function createDiagramSvg(
       const source = nodes.get(edge.sourceId)
       const target = nodes.get(edge.targetId)
       if (!source || !target) return []
-      return `<line x1="${source.position.x + NODE_WIDTH}" y1="${source.position.y + NODE_HEIGHT / 2}" x2="${target.position.x}" y2="${target.position.y + NODE_HEIGHT / 2}" stroke="#315B68" stroke-width="2" fill="none" marker-end="url(#arrow)"${edge.style === 'dashed' ? ' stroke-dasharray="6 4"' : ''} />`
+      const x1 = source.position.x + NODE_WIDTH
+      const y1 = source.position.y + NODE_HEIGHT / 2
+      const x2 = target.position.x
+      const y2 = target.position.y + NODE_HEIGHT / 2
+      const label = edge.label
+        ? `<text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 8}" text-anchor="middle" fill="#162127" font-family="sans-serif" font-size="12">${escapeText(edge.label)}</text>`
+        : ''
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#315B68" stroke-width="2" fill="none" marker-end="url(#arrow)"${edge.style === 'dashed' ? ' stroke-dasharray="6 4"' : ''} />${label}`
     })
     .join('')
   const diagramNodes = view.nodes

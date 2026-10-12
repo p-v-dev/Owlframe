@@ -28,15 +28,18 @@ interface EditorState {
   activeViewId: string
   selectedNodeIds: string[]
   selectedEdgeIds: string[]
+  selectedGroupIds: string[]
   message: string
   getActiveView: () => DiagramView
   setActiveView: (viewId: string) => void
+  selectGroup: (groupId: string) => void
   addService: () => void
   addComponent: (kind: DiagramNodeKind) => void
   addGroup: () => void
   updateSelectedGroup: (patch: Partial<Omit<DiagramGroup, 'id'>>) => void
   removeGroups: (ids: string[]) => void
   assignNodeToGroup: (nodeId: string, groupId: string | undefined) => void
+  assignSelectedNodesToGroup: (groupId: string) => void
   setViewport: (viewport: DiagramViewport) => void
   updateSelectedNode: (patch: {
     label?: string
@@ -78,12 +81,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeViewId: 'view-contexto',
   selectedNodeIds: [],
   selectedEdgeIds: [],
+  selectedGroupIds: [],
   message: '',
   getActiveView: () => getActiveView(get().document, get().activeViewId),
   setActiveView: (activeViewId) => {
     if (!get().document.views.some((view) => view.id === activeViewId)) return
-    set({ activeViewId, selectedNodeIds: [], selectedEdgeIds: [] })
+    set({ activeViewId, selectedNodeIds: [], selectedEdgeIds: [], selectedGroupIds: [] })
   },
+  selectGroup: (groupId) => set({ selectedGroupIds: [groupId] }),
   addService: () => {
     get().addComponent('service')
   },
@@ -162,7 +167,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
   updateSelectedGroup: (patch) => {
-    const groupId = get().selectedNodeIds[0]
+    const groupId = get().selectedGroupIds[0]
     if (!groupId) return
     set(({ document, activeViewId }) => ({
       document: updateGroup(document, activeViewId, groupId, patch),
@@ -173,13 +178,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const activeViewId = get().activeViewId
     let next = get().document
     for (const id of ids) next = removeGroup(next, activeViewId, id)
-    set({ document: next, dirty: true })
+    set({ document: next, dirty: true, selectedGroupIds: [] })
   },
   assignNodeToGroup: (nodeId, groupId) =>
     set(({ document, activeViewId }) => ({
       document: updateNode(document, activeViewId, nodeId, { groupId }),
       dirty: true
     })),
+  assignSelectedNodesToGroup: (groupId) => {
+    let next = get().document
+    const { activeViewId, selectedNodeIds } = get()
+    for (const nodeId of selectedNodeIds) next = updateNode(next, activeViewId, nodeId, { groupId })
+    set({ document: next, dirty: true })
+  },
   setViewport: (viewport) =>
     set(({ document, activeViewId }) => ({
       document: updateView(document, activeViewId, { viewport }),
@@ -193,7 +204,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     ) {
       return
     }
-    set({ selectedNodeIds, selectedEdgeIds })
+    set({ selectedNodeIds, selectedEdgeIds, selectedGroupIds: [] })
   },
   removeSelection: () => {
     const { document, activeViewId, selectedNodeIds, selectedEdgeIds } = get()
@@ -231,6 +242,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         activeViewId: document.views[0].id,
         selectedNodeIds: [],
         selectedEdgeIds: [],
+        selectedGroupIds: [],
         message: ''
       })
     } catch (error) {
@@ -249,6 +261,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           activeViewId: result.document.views[0].id,
           selectedNodeIds: [],
           selectedEdgeIds: [],
+          selectedGroupIds: [],
           message: ''
         })
       }
