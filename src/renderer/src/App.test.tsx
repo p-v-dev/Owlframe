@@ -31,6 +31,7 @@ beforeEach(() => {
     document: createEmptyDocument('test', 'Test diagram'),
     path: undefined,
     dirty: false,
+    activeViewId: 'view-contexto',
     selectedNodeIds: [],
     selectedEdgeIds: [],
     message: ''
@@ -48,6 +49,22 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.getByRole('button', { name: 'Add service' })).toBeTruthy()
+  })
+
+  it('switches the active altitude view from the ruler', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sistema' }))
+
+    expect(useEditorStore.getState().activeViewId).toBe('view-sistema')
+  })
+
+  it('adds a visual group from the component palette', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add group' }))
+
+    expect(useEditorStore.getState().getActiveView().groups).toHaveLength(1)
   })
 
   it('adds a service to the document', () => {

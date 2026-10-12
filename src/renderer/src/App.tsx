@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Background,
   Controls,
@@ -11,7 +11,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import { Box, Database, Globe, Layers, Server, Waypoints } from 'lucide-react'
 import { siDocker, siGo, siNodedotjs, siPostgresql, siRedis } from 'simple-icons'
-import type { DiagramNodeKind } from '../../core/document'
+import type { DiagramAltitude, DiagramNodeKind } from '../../core/document'
 import { useEditorStore } from './editor-store'
 
 const techIcons = {
@@ -32,7 +32,9 @@ const palette: [DiagramNodeKind, string, React.ElementType][] = [
 
 function ServiceNode({
   data
-}: NodeProps<Node<{ label: string; color?: string; icon?: string }>>): React.JSX.Element {
+}: NodeProps<
+  Node<{ label: string; color?: string; icon?: string; kind: DiagramNodeKind; compact: boolean }>
+>): React.JSX.Element {
   const tech = data.icon ? techIcons[data.icon as keyof typeof techIcons] : undefined
   return (
     <div
@@ -42,13 +44,14 @@ function ServiceNode({
     >
       <Handle type="target" position={Position.Left} />
       <span className="flex items-center gap-2">
-        {tech && (
+        {tech && !data.compact && (
           <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24">
             <path d={tech.path} fill={`#${tech.hex}`} />
           </svg>
         )}
         {data.label}
       </span>
+      {!data.compact && <span className="mt-1 block text-[10px] uppercase text-[#315B68]">{data.kind}</span>}
       <Handle type="source" position={Position.Right} />
     </div>
   )
@@ -56,18 +59,40 @@ function ServiceNode({
 
 const nodeTypes = { service: ServiceNode }
 
+const contourPaths: Record<DiagramAltitude, string[]> = {
+  contexto: ['M3 20C18 4 48 4 61 20'],
+  sistema: ['M3 20C18 4 48 4 61 20', 'M8 24C22 10 43 10 56 24'],
+  servicos: [
+    'M3 20C18 4 48 4 61 20',
+    'M6 22C20 7 45 7 58 22',
+    'M10 25C23 12 42 12 54 25',
+    'M14 28C25 17 39 17 50 28'
+  ],
+  fluxo: ['M4 24H56', 'M48 16L56 24L48 32']
+}
+
 function App(): React.JSX.Element {
   const state = useEditorStore()
-  const view = state.document.views.find((candidate) => candidate.id === 'view-contexto')!
-  const nodes = useMemo<Node<{ label: string }>[]>(
+  const view = state.getActiveView()
+  const [zoom, setZoom] = useState(view.viewport.zoom)
+  const compact = zoom < 0.65
+  const nodes = useMemo<
+    Node<{ label: string; color?: string; icon?: string; kind: DiagramNodeKind; compact: boolean }>[]
+  >(
     () =>
       view.nodes.map((node) => ({
         id: node.id,
         type: 'service',
         position: node.position,
-        data: { label: node.label, color: node.style.color, icon: node.style.icon }
+        data: {
+          label: node.label,
+          color: node.style.color,
+          icon: node.style.icon,
+          kind: node.kind,
+          compact
+        }
       })),
-    [view.nodes]
+    [compact, view.nodes]
   )
   const edges = useMemo(
     () => view.edges.map((edge) => ({ id: edge.id, source: edge.sourceId, target: edge.targetId })),
@@ -131,15 +156,39 @@ function App(): React.JSX.Element {
           {state.message}
         </p>
       )}
-      <div className="flex border-b border-[#315B68] bg-[#F8F7F2]">
+      <div className="canvas-controls border-b border-[#315B68] bg-[#F8F7F2]">
+        <nav className="altitude-ruler" aria-label="Altitude views">
+          {state.document.views.map((candidate) => (
+            <button
+              aria-current={candidate.id === state.activeViewId ? 'page' : undefined}
+              className="altitude-view"
+              key={candidate.id}
+              onClick={() => {
+                state.setActiveView(candidate.id)
+                setZoom(candidate.viewport.zoom)
+              }}
+              type="button"
+            >
+              <svg aria-hidden="true" viewBox="0 0 64 36">
+                {contourPaths[candidate.altitude].map((path) => (
+                  <path d={path} fill="none" key={path} stroke="currentColor" strokeWidth="1.5" />
+                ))}
+              </svg>
+              <span>{candidate.name}</span>
+            </button>
+          ))}
+        </nav>
         <aside
-          className="flex w-44 flex-col gap-1 border-r border-[#315B68] p-2"
+          className="component-palette"
           aria-label="Components"
         >
           <span className="px-2 py-1 font-mono text-xs text-[#315B68]">COMPONENTS</span>
+          <button className="palette-action" onClick={state.addGroup} type="button">
+            Add group
+          </button>
           {palette.map(([kind, label, Icon]) => (
             <button
-              className="flex items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-[#E8ECE7]"
+              className="palette-action flex items-center gap-2"
               key={kind}
               onClick={() => state.addComponent(kind)}
               type="button"
@@ -150,7 +199,7 @@ function App(): React.JSX.Element {
           ))}
         </aside>
         {selected && (
-          <aside className="w-64 space-y-3 border-r border-[#315B68] p-3" aria-label="Properties">
+          <aside className="properties-panel" aria-label="Properties">
             <label className="block text-xs">
               Name
               <input
@@ -208,16 +257,38 @@ function App(): React.JSX.Element {
           </aside>
         )}
       </div>
-      <section className="relative min-h-0 flex-1" aria-label="Contexto diagram">
+      <section className="relative min-h-0 flex-1" aria-label={`${view.name} diagram`}>
         {!nodes.length && (
           <p className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-sm text-[#315B68]">
             Add a service to start diagramming.
           </p>
         )}
+        <div
+          aria-hidden="true"
+          className="group-layer"
+          style={{ transform: `translate(${view.viewport.x}px, ${view.viewport.y}px) scale(${zoom})` }}
+        >
+          {view.groups.map((group) => (
+            <div
+              className="diagram-group"
+              key={group.id}
+              style={{
+                borderColor: group.style.color,
+                height: group.height,
+                left: group.position.x,
+                top: group.position.y,
+                width: group.width
+              }}
+            >
+              {group.label}
+            </div>
+          ))}
+        </div>
         <ReactFlow
+          key={state.activeViewId}
           deleteKeyCode="Delete"
+          defaultViewport={view.viewport}
           edges={edges}
-          fitView
           defaultEdgeOptions={{ style: { stroke: '#315B68', strokeWidth: 1.5 } }}
           nodes={nodes}
           nodeTypes={nodeTypes}
@@ -226,6 +297,10 @@ function App(): React.JSX.Element {
           onConnect={({ source, target }) => state.connect(source, target)}
           onEdgesDelete={(deleted) => state.removeEdges(deleted.map((edge) => edge.id))}
           onNodeDragStop={(_, node) => state.moveNode(node.id, node.position)}
+          onMoveEnd={(_, viewport) => {
+            setZoom(viewport.zoom)
+            state.setViewport(viewport)
+          }}
           onNodesDelete={(deleted) => state.removeNodes(deleted.map((node) => node.id))}
           onSelectionChange={({ nodes: selectedNodes, edges: selectedEdges }) =>
             state.setSelection(
