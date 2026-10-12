@@ -51,7 +51,9 @@ function ServiceNode({
         )}
         {data.label}
       </span>
-      {!data.compact && <span className="mt-1 block text-[10px] uppercase text-[#315B68]">{data.kind}</span>}
+      {!data.compact && (
+        <span className="mt-1 block text-[10px] uppercase text-[#315B68]">{data.kind}</span>
+      )}
       <Handle type="source" position={Position.Right} />
     </div>
   )
@@ -78,7 +80,13 @@ function App(): React.JSX.Element {
   useEffect(() => setViewport(view.viewport), [view.viewport])
   const compact = viewport.zoom < 0.65
   const nodes = useMemo<
-    Node<{ label: string; color?: string; icon?: string; kind: DiagramNodeKind; compact: boolean }>[]
+    Node<{
+      label: string
+      color?: string
+      icon?: string
+      kind: DiagramNodeKind
+      compact: boolean
+    }>[]
   >(
     () =>
       view.nodes.map((node) => ({
@@ -179,10 +187,7 @@ function App(): React.JSX.Element {
             </button>
           ))}
         </nav>
-        <aside
-          className="component-palette"
-          aria-label="Components"
-        >
+        <aside className="component-palette" aria-label="Components">
           <span className="px-2 py-1 font-mono text-xs text-[#315B68]">COMPONENTS</span>
           <button className="palette-action" onClick={state.addGroup} type="button">
             Add group
