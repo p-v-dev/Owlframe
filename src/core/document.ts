@@ -78,6 +78,33 @@ export function createEmptyDocument(id: string, name: string): DiagramDocument {
         edges: [],
         groups: [],
         viewport: { x: 0, y: 0, zoom: 1 }
+      },
+      {
+        id: 'view-sistema',
+        name: 'Sistema',
+        altitude: 'sistema',
+        nodes: [],
+        edges: [],
+        groups: [],
+        viewport: { x: 0, y: 0, zoom: 1 }
+      },
+      {
+        id: 'view-servicos',
+        name: 'Serviços',
+        altitude: 'servicos',
+        nodes: [],
+        edges: [],
+        groups: [],
+        viewport: { x: 0, y: 0, zoom: 1 }
+      },
+      {
+        id: 'view-fluxo',
+        name: 'Fluxo',
+        altitude: 'fluxo',
+        nodes: [],
+        edges: [],
+        groups: [],
+        viewport: { x: 0, y: 0, zoom: 1 }
       }
     ]
   }

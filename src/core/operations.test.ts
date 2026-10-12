@@ -16,7 +16,8 @@ import {
   removeView,
   renameView,
   updateGroup,
-  updateNode
+  updateNode,
+  updateView
 } from './operations'
 
 const node = (id: string, groupId?: string): DiagramNode => ({
@@ -52,17 +53,25 @@ describe('view operations', () => {
     const document = createEmptyDocument('project-1', 'Payments')
     const withView = addView(document, view('view-system'))
 
-    expect(renameView(withView, 'view-system', 'System').views[1].name).toBe('System')
-    expect(document.views).toHaveLength(1)
+    expect(renameView(withView, 'view-system', 'System').views.at(-1)?.name).toBe('System')
+    expect(document.views).toHaveLength(4)
   })
 
-  it('rejects duplicate view IDs and removing the final view', () => {
+  it('rejects duplicate and missing view IDs', () => {
     const document = createEmptyDocument('project-1', 'Payments')
 
     expect(() => addView(document, view('view-contexto'))).toThrow(
       'View already exists: view-contexto'
     )
-    expect(() => removeView(document, 'view-contexto')).toThrow('Cannot remove the final view')
+    expect(() => removeView(document, 'missing')).toThrow('View not found: missing')
+  })
+
+  it('updates one view without changing another', () => {
+    const document = createEmptyDocument('project-1', 'Payments')
+    const updated = updateView(document, 'view-sistema', { viewport: { x: 10, y: 20, zoom: 2 } })
+
+    expect(updated.views[1].viewport).toEqual({ x: 10, y: 20, zoom: 2 })
+    expect(updated.views[0].viewport).toEqual({ x: 0, y: 0, zoom: 1 })
   })
 })
 

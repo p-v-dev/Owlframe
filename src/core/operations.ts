@@ -37,6 +37,14 @@ export function renameView(
   return changeView(document, viewId, (view) => ({ ...view, name }))
 }
 
+export function updateView(
+  document: DiagramDocument,
+  viewId: string,
+  patch: Partial<Omit<DiagramView, 'id'>>
+): DiagramDocument {
+  return changeView(document, viewId, (view) => ({ ...view, ...patch, id: view.id }))
+}
+
 export function removeView(document: DiagramDocument, viewId: string): DiagramDocument {
   if (document.views.length === 1) {
     throw new Error('Cannot remove the final view')
