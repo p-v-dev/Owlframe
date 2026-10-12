@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "id": "microservices",
+    "name": "Microservices Architecture"
+  },
+  "views": [
+    {
+      "id": "view-contexto",
+      "name": "Contexto",
+      "altitude": "contexto",
+      "nodes": [],
+      "edges": [],
+      "groups": [],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    },
+    {
+      "id": "view-sistema",
+      "name": "Sistema",
+      "altitude": "sistema",
+      "nodes": [],
+      "edges": [],
+      "groups": [],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    },
+    {
+      "id": "view-servicos",
+      "name": "Serviços",
+      "altitude": "servicos",
+      "nodes": [
+        {
+          "id": "gateway",
+          "kind": "gateway",
+          "label": "API Gateway",
+          "position": { "x": 40, "y": 260 },
+          "style": { "color": "#C85F30" },
+          "groupId": "cluster"
+        },
+        {
+          "id": "orders",
+          "kind": "service",
+          "label": "Orders Service",
+          "position": { "x": 280, "y": 100 },
+          "style": { "color": "#315B68" },
+          "groupId": "cluster"
+        },
+        {
+          "id": "inventory",
+          "kind": "service",
+          "label": "Inventory Service",
+          "position": { "x": 280, "y": 260 },
+          "style": { "color": "#315B68" },
+          "groupId": "cluster"
+        },
+        {
+          "id": "notifications",
+          "kind": "service",
+          "label": "Notifications Service",
+          "position": { "x": 280, "y": 420 },
+          "style": { "color": "#315B68" },
+          "groupId": "cluster"
+        },
+        {
+          "id": "events",
+          "kind": "queue",
+          "label": "Event Queue",
+          "position": { "x": 560, "y": 260 },
+          "style": { "color": "#8C6A3E" },
+          "groupId": "cluster"
+        },
+        {
+          "id": "database",
+          "kind": "database",
+          "label": "Orders Database",
+          "position": { "x": 800, "y": 180 },
+          "style": { "color": "#4B6E54" },
+          "groupId": "cluster"
+        }
+      ],
+      "edges": [
+        { "id": "gateway-orders", "sourceId": "gateway", "targetId": "orders", "style": "solid" },
+        {
+          "id": "gateway-inventory",
+          "sourceId": "gateway",
+          "targetId": "inventory",
+          "style": "solid"
+        },
+        {
+          "id": "gateway-notifications",
+          "sourceId": "gateway",
+          "targetId": "notifications",
+          "style": "solid"
+        },
+        { "id": "orders-events", "sourceId": "orders", "targetId": "events", "style": "dashed" },
+        {
+          "id": "events-notifications",
+          "sourceId": "events",
+          "targetId": "notifications",
+          "style": "dashed"
+        },
+        { "id": "orders-database", "sourceId": "orders", "targetId": "database", "style": "solid" },
+        {
+          "id": "inventory-database",
+          "sourceId": "inventory",
+          "targetId": "database",
+          "style": "solid"
+        }
+      ],
+      "groups": [
+        {
+          "id": "cluster",
+          "label": "Kubernetes Cluster",
+          "position": { "x": 0, "y": 20 },
+          "width": 1040,
+          "height": 560,
+          "style": { "color": "#4B6E54" }
+        }
+      ],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    },
+    {
+      "id": "view-fluxo",
+      "name": "Fluxo",
+      "altitude": "fluxo",
+      "nodes": [],
+      "edges": [],
+      "groups": [],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    }
+  ]
+}

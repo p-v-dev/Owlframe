@@ -95,16 +95,16 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 **Objetivo:** tornar possível desenhar e modificar um diagrama visualmente.
 
 - [x] Integrar React Flow à interface.
-- [ ] Criar a régua vertical de altitude para alternar entre vistas nomeadas sem confundi-la com a paleta de componentes.
+- [x] Criar a régua vertical de altitude para alternar entre vistas nomeadas sem confundi-la com a paleta de componentes.
 - [x] Criar um nó visual padrão baseado no modelo de documento.
 - [x] Adicionar nós por uma ação simples na interface.
-- [ ] Permitir mover, selecionar, renomear e excluir nós.
+- [x] Permitir mover, selecionar, renomear e excluir nós.
 - [x] Permitir criar, selecionar e excluir conexões.
 - [x] Implementar pan, zoom, _fit view_ e atalhos essenciais.
 - [x] Sincronizar alterações com Zustand sem introduzir um segundo formato de documento como fonte de verdade.
 - [x] Distinguir estado persistido do diagrama de estado efêmero de UI (seleção, menus, painéis).
 - [x] Criar estado vazio e feedback para operações inválidas.
-- [ ] Aplicar zoom semântico progressivo: ocultar detalhes secundários antes de reduzir a legibilidade de grupos e conexões principais.
+- [x] Aplicar zoom semântico progressivo: ocultar detalhes secundários antes de reduzir a legibilidade de grupos e conexões principais.
 
 **Critério de aceite:** o usuário consegue montar e editar um pequeno diagrama com pelo menos cinco componentes conectados, sem editar JSON manualmente.
 
@@ -128,17 +128,17 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 **Objetivo:** aproximar o visual de diagramas modernos de arquitetura, em vez de apenas caixas ligadas por linhas.
 
 - [x] Criar o tema padrão **Atlas Operacional**: canvas Survey claro, moldura Graphite, Harbor para estrutura, Moss para grupos, Cloud para superfícies elevadas e Signal Copper somente para foco, atenção e ação primária.
-- [ ] Empacotar localmente `Instrument Sans` para interface e `IBM Plex Mono` para precisão técnica antes de torná-las parte da identidade visual.
+- [x] Empacotar localmente `Instrument Sans` para interface e `IBM Plex Mono` para precisão técnica antes de torná-las parte da identidade visual.
 - [x] Criar uma paleta lateral de componentes (serviço, banco de dados, fila, gateway, cliente e grupo).
 - [x] Adicionar ícones de tecnologias a partir de um catálogo local empacotado com o aplicativo.
 - [x] Permitir personalizar título, descrição opcional, ícone e cor dos componentes.
 - [x] Criar estilos de arestas (por exemplo, linha contínua, tracejada, seta e rótulo).
-- [ ] Permitir criar contêineres/grupos visuais (por exemplo, `VPC`, `Kubernetes Cluster`, `Docker Compose`).
+- [x] Permitir criar contêineres/grupos visuais (por exemplo, `VPC`, `Kubernetes Cluster`, `Docker Compose`).
 - [x] Implementar alinhamento visual básico, grade opcional e _snap-to-grid_.
 - [x] Construir um painel de propriedades contextual, sem poluir o canvas.
-- [ ] Implementar a assinatura de contorno na régua de altitude: densidade baixa no contexto, maior em serviços e trajetos direcionais finos em fluxos.
+- [x] Implementar a assinatura de contorno na régua de altitude: densidade baixa no contexto, maior em serviços e trajetos direcionais finos em fluxos.
 - [x] Garantir foco visível, contraste adequado e respeito a `prefers-reduced-motion` para controles, transições e movimentos do canvas.
-- [ ] Validar o resultado com dois exemplos reais: uma arquitetura web simples e uma arquitetura com microsserviços.
+- [x] Validar o resultado com dois exemplos reais: uma arquitetura web simples e uma arquitetura com microsserviços.
 
 **Critério de aceite:** diagramas novos ficam visualmente consistentes por padrão e o usuário consegue reproduzir, de forma aproximada, o estilo de um diagrama profissional de infraestrutura.
 
@@ -146,12 +146,12 @@ O MVP está concluído quando alguém consegue, do zero e sem internet:
 
 **Objetivo:** usar os diagramas em README, documentação, apresentações e portfólio.
 
-- [ ] Exportar SVG preservando texto, conexões e ícones.
-- [ ] Exportar PNG com resolução configurável.
-- [ ] Oferecer opção de fundo transparente ou fundo do tema.
-- [ ] Ajustar enquadramento para incluir todo o diagrama, não apenas a área visível do canvas.
-- [ ] Garantir que exportação não contenha elementos da interface do editor.
-- [ ] Testar ícones, fontes, arestas, grupos e diagramas maiores nos arquivos exportados.
+- [x] Exportar SVG preservando texto, conexões e ícones.
+- [x] Exportar PNG com resolução configurável.
+- [x] Oferecer opção de fundo transparente ou fundo do tema.
+- [x] Ajustar enquadramento para incluir todo o diagrama, não apenas a área visível do canvas.
+- [x] Garantir que exportação não contenha elementos da interface do editor.
+- [x] Testar ícones, fontes, arestas, grupos e diagramas maiores nos arquivos exportados.
 
 **Critério de aceite:** o usuário consegue inserir a exportação em um README ou slide com qualidade legível, sem precisar fazer captura de tela.
 

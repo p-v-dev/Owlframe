@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, type DiagramDocument } from './document'
 import { validateDocument } from './validation'
@@ -39,6 +41,15 @@ function validDocument(): DiagramDocument {
 }
 
 describe('validateDocument', () => {
+  it.each(['web-architecture.owlframe', 'microservices.owlframe'])(
+    'accepts the shipped %s example',
+    async (filename) => {
+      const contents = await readFile(resolve(process.cwd(), 'examples', filename), 'utf8')
+
+      expect(validateDocument(JSON.parse(contents)).ok).toBe(true)
+    }
+  )
+
   it('accepts a complete version 1 document', () => {
     const document = validDocument()
 

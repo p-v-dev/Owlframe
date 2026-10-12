@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "id": "web-architecture",
+    "name": "Web Architecture"
+  },
+  "views": [
+    {
+      "id": "view-contexto",
+      "name": "Contexto",
+      "altitude": "contexto",
+      "nodes": [],
+      "edges": [],
+      "groups": [],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    },
+    {
+      "id": "view-sistema",
+      "name": "Sistema",
+      "altitude": "sistema",
+      "nodes": [
+        {
+          "id": "client",
+          "kind": "client",
+          "label": "Web Client",
+          "position": { "x": 40, "y": 180 },
+          "style": { "color": "#315B68" }
+        },
+        {
+          "id": "gateway",
+          "kind": "gateway",
+          "label": "API Gateway",
+          "position": { "x": 280, "y": 180 },
+          "style": { "color": "#C85F30" },
+          "groupId": "vpc"
+        },
+        {
+          "id": "service",
+          "kind": "service",
+          "label": "Web Service",
+          "position": { "x": 520, "y": 180 },
+          "style": { "color": "#315B68" },
+          "groupId": "vpc"
+        },
+        {
+          "id": "database",
+          "kind": "database",
+          "label": "PostgreSQL",
+          "position": { "x": 760, "y": 180 },
+          "style": { "color": "#4B6E54" },
+          "groupId": "vpc"
+        }
+      ],
+      "edges": [
+        { "id": "client-gateway", "sourceId": "client", "targetId": "gateway", "style": "solid" },
+        { "id": "gateway-service", "sourceId": "gateway", "targetId": "service", "style": "solid" },
+        {
+          "id": "service-database",
+          "sourceId": "service",
+          "targetId": "database",
+          "style": "solid"
+        }
+      ],
+      "groups": [
+        {
+          "id": "vpc",
+          "label": "VPC",
+          "position": { "x": 220, "y": 100 },
+          "width": 760,
+          "height": 220,
+          "style": { "color": "#4B6E54" }
+        }
+      ],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    },
+    {
+      "id": "view-servicos",
+      "name": "Serviços",
+      "altitude": "servicos",
+      "nodes": [],
+      "edges": [],
+      "groups": [],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    },
+    {
+      "id": "view-fluxo",
+      "name": "Fluxo",
+      "altitude": "fluxo",
+      "nodes": [],
+      "edges": [],
+      "groups": [],
+      "viewport": { "x": 0, "y": 0, "zoom": 1 }
+    }
+  ]
+}
