@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Background,
   Controls,
@@ -74,8 +74,9 @@ const contourPaths: Record<DiagramAltitude, string[]> = {
 function App(): React.JSX.Element {
   const state = useEditorStore()
   const view = state.getActiveView()
-  const [zoom, setZoom] = useState(view.viewport.zoom)
-  const compact = zoom < 0.65
+  const [viewport, setViewport] = useState(view.viewport)
+  useEffect(() => setViewport(view.viewport), [view.viewport])
+  const compact = viewport.zoom < 0.65
   const nodes = useMemo<
     Node<{ label: string; color?: string; icon?: string; kind: DiagramNodeKind; compact: boolean }>[]
   >(
@@ -165,7 +166,7 @@ function App(): React.JSX.Element {
               key={candidate.id}
               onClick={() => {
                 state.setActiveView(candidate.id)
-                setZoom(candidate.viewport.zoom)
+                setViewport(candidate.viewport)
               }}
               type="button"
             >
@@ -266,7 +267,9 @@ function App(): React.JSX.Element {
         <div
           aria-hidden="true"
           className="group-layer"
-          style={{ transform: `translate(${view.viewport.x}px, ${view.viewport.y}px) scale(${zoom})` }}
+          style={{
+            transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`
+          }}
         >
           {view.groups.map((group) => (
             <div
@@ -297,8 +300,9 @@ function App(): React.JSX.Element {
           onConnect={({ source, target }) => state.connect(source, target)}
           onEdgesDelete={(deleted) => state.removeEdges(deleted.map((edge) => edge.id))}
           onNodeDragStop={(_, node) => state.moveNode(node.id, node.position)}
+          onMove={(_, nextViewport) => setViewport(nextViewport)}
           onMoveEnd={(_, viewport) => {
-            setZoom(viewport.zoom)
+            setViewport(viewport)
             state.setViewport(viewport)
           }}
           onNodesDelete={(deleted) => state.removeNodes(deleted.map((node) => node.id))}
@@ -308,6 +312,7 @@ function App(): React.JSX.Element {
               selectedEdges.map((edge) => edge.id)
             )
           }
+          viewport={viewport}
         >
           <Background color="#8DA59A" gap={16} size={1} />
           <Controls />
