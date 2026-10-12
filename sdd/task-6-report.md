@@ -88,3 +88,56 @@ The command remains blocked at `prettier --check .` by 40 pre-existing unrelated
 ## Concern
 
 Repository-wide formatting is not clean because of the 40 unrelated files above. No Task 6 behavior, type checking, scoped formatting, or tests are failing.
+
+## P1 Review Fix: Preserve SVG Icons
+
+### Root Cause
+
+`ServiceNode` resolved `node.style.icon` through the local `simple-icons` catalog, but `createDiagramSvg` emitted only each node rectangle and label. SVG and PNG exports therefore omitted configured technology icons.
+
+### Change
+
+- Extracted the existing five-icon UI catalog to `src/renderer/src/tech-icons.ts`.
+- Reused that catalog in both `App.tsx` and `diagram-export.ts`; no network request or dependency was added.
+- SVG export emits the supported Simple Icons path and shifts the node label to preserve both renderings. Unknown icon keys retain the existing label-only output.
+
+### TDD Evidence
+
+1. Added `preserves a supported node icon path and label in SVG output` before changing the exporter.
+2. RED command:
+
+   ```text
+   npm test -- src/renderer/src/diagram-export.test.ts
+   ```
+
+3. RED result: 4 tests passed and the new test failed as expected because the SVG did not contain `siDocker.path`.
+4. Added the shared local catalog and minimal SVG path rendering.
+5. GREEN command:
+
+   ```text
+   npm test -- src/renderer/src/diagram-export.test.ts
+   ```
+
+6. GREEN result: 1 test file passed, 5 tests passed.
+
+### Verification
+
+```text
+npm test -- src/renderer/src/diagram-export.test.ts
+Test Files  1 passed (1)
+Tests       5 passed (5)
+```
+
+```text
+npm run typecheck
+typecheck:node  tsc --noEmit -p tsconfig.node.json --composite false
+typecheck:web   tsc --noEmit -p tsconfig.web.json --composite false
+Exit status: 0
+```
+
+```text
+npx prettier --check src/renderer/src/diagram-export.ts src/renderer/src/diagram-export.test.ts src/renderer/src/tech-icons.ts
+All scoped formatting checks passed.
+```
+
+`App.tsx` retains its pre-existing `react-hooks/set-state-in-effect` lint error at line 75. The icon catalog extraction does not touch that effect.

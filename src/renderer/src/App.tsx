@@ -10,18 +10,10 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { Box, Database, Globe, Layers, Server, Waypoints } from 'lucide-react'
-import { siDocker, siGo, siNodedotjs, siPostgresql, siRedis } from 'simple-icons'
 import type { DiagramAltitude, DiagramNodeKind } from '../../core/document'
 import { createDiagramSvg, createPngBlob } from './diagram-export'
 import { useEditorStore } from './editor-store'
-
-const techIcons = {
-  go: siGo,
-  docker: siDocker,
-  postgres: siPostgresql,
-  redis: siRedis,
-  node: siNodedotjs
-}
+import { techIcons } from './tech-icons'
 const palette: [DiagramNodeKind, string, React.ElementType][] = [
   ['service', 'Service', Server],
   ['client', 'API', Globe],

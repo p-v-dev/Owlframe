@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { siDocker } from 'simple-icons'
 import type { DiagramView } from '../../core/document'
 import { createDiagramSvg, createPngBlob } from './diagram-export'
 
@@ -59,6 +60,19 @@ describe('diagram export', () => {
   it('uses the Survey background only when requested', () => {
     expect(createDiagramSvg(view, { background: 'theme' })).toContain('fill="#E8ECE7"')
     expect(createDiagramSvg(view, { background: 'transparent' })).not.toContain('fill="#E8ECE7"')
+  })
+
+  it('preserves a supported node icon path and label in SVG output', () => {
+    const svg = createDiagramSvg(
+      {
+        ...view,
+        nodes: [{ ...view.nodes[0], style: { ...view.nodes[0].style, icon: 'docker' } }]
+      },
+      { background: 'transparent' }
+    )
+
+    expect(svg).toContain(siDocker.path)
+    expect(svg).toContain('Source &lt;one&gt;')
   })
 
   it('creates a scaled PNG blob and releases its source URL', async () => {

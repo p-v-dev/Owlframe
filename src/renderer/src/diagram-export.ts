@@ -1,4 +1,5 @@
 import type { DiagramView } from '../../core/document'
+import { techIcons } from './tech-icons'
 
 const NODE_WIDTH = 176
 const NODE_HEIGHT = 56
@@ -59,10 +60,16 @@ export function createDiagramSvg(
     })
     .join('')
   const diagramNodes = view.nodes
-    .map(
-      (node) =>
-        `<rect x="${node.position.x}" y="${node.position.y}" width="${NODE_WIDTH}" height="${NODE_HEIGHT}" rx="2" fill="#F8F7F2" stroke="${node.style.color}" stroke-width="2" /><text x="${node.position.x + 12}" y="${node.position.y + 34}" fill="#162127" font-family="monospace" font-size="14">${escapeText(node.label)}</text>`
-    )
+    .map((node) => {
+      const icon = node.style.icon
+        ? techIcons[node.style.icon as keyof typeof techIcons]
+        : undefined
+      const iconSvg = icon
+        ? `<path d="${icon.path}" fill="#${icon.hex}" transform="translate(${node.position.x + 12} ${node.position.y + 20}) scale(0.75)" />`
+        : ''
+      const labelX = node.position.x + (icon ? 40 : 12)
+      return `<rect x="${node.position.x}" y="${node.position.y}" width="${NODE_WIDTH}" height="${NODE_HEIGHT}" rx="2" fill="#F8F7F2" stroke="${node.style.color}" stroke-width="2" />${iconSvg}<text x="${labelX}" y="${node.position.y + 34}" fill="#162127" font-family="monospace" font-size="14">${escapeText(node.label)}</text>`
+    })
     .join('')
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${frame.x} ${frame.y} ${frame.width} ${frame.height}" width="${frame.width}" height="${frame.height}"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#315B68" /></marker></defs>${backgroundRect}${groups}${edges}${diagramNodes}</svg>`
