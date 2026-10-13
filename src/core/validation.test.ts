@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { createEmptyDocument, type DiagramDocument } from './document'
+import { createEmptyDocument, type DiagramDocument, type DiagramNodeKind } from './document'
 import { validateDocument } from './validation'
 
 function validDocument(): DiagramDocument {
@@ -55,6 +55,16 @@ describe('validateDocument', () => {
 
     expect(validateDocument(document)).toEqual({ ok: true, document })
   })
+
+  it.each(['server', 'service', 'api', 'worker', 'gateway', 'load-balancer'] as DiagramNodeKind[])(
+    'accepts the %s component kind',
+    (kind) => {
+      const document = validDocument()
+      document.views[0].nodes[0].kind = kind
+
+      expect(validateDocument(document).ok).toBe(true)
+    }
+  )
 
   it('validates persisted component details independently from their parent view', () => {
     const document = validDocument()

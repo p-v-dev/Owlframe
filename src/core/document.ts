@@ -3,7 +3,17 @@ export const DEFAULT_NODE_WIDTH = 176
 export const DEFAULT_NODE_HEIGHT = 64
 
 export type DiagramAltitude = 'contexto' | 'sistema' | 'servicos' | 'fluxo'
-export type DiagramNodeKind = 'service' | 'database' | 'queue' | 'gateway' | 'client' | 'container'
+export type DiagramNodeKind =
+  | 'server'
+  | 'service'
+  | 'api'
+  | 'worker'
+  | 'gateway'
+  | 'load-balancer'
+  | 'database'
+  | 'queue'
+  | 'client'
+  | 'container'
 export type DiagramEdgeStyle = 'solid' | 'dashed'
 
 export interface DiagramMetadata {
@@ -23,6 +33,7 @@ export interface DiagramViewport extends DiagramPosition {
 export interface DiagramStyle {
   color: string
   icon?: string
+  filled?: boolean
 }
 
 export interface DiagramNode {

@@ -8,7 +8,11 @@ import {
 
 const altitudes: DiagramAltitude[] = ['contexto', 'sistema', 'servicos', 'fluxo']
 const nodeKinds: DiagramNodeKind[] = [
+  'server',
   'service',
+  'api',
+  'worker',
+  'load-balancer',
   'database',
   'queue',
   'gateway',

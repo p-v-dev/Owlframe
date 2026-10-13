@@ -75,7 +75,10 @@ export function createDiagramSvg(
       const labelX = node.position.x + (icon ? 40 : 12)
       const width = node.width ?? DEFAULT_NODE_WIDTH
       const height = node.height ?? DEFAULT_NODE_HEIGHT
-      return `<rect x="${node.position.x}" y="${node.position.y}" width="${width}" height="${height}" rx="2" fill="#F8F7F2" stroke="${node.style.color}" stroke-width="2" />${iconSvg}<text x="${labelX}" y="${node.position.y + height / 2 + 6}" fill="#162127" font-family="monospace" font-size="14">${escapeText(node.label)}</text>`
+      const tint = node.style.filled
+        ? `<rect x="${node.position.x}" y="${node.position.y}" width="${width}" height="${height}" rx="2" fill="${node.style.color}" fill-opacity="0.11" /><rect x="${node.position.x}" y="${node.position.y}" width="4" height="${height}" fill="${node.style.color}" />`
+        : ''
+      return `<rect x="${node.position.x}" y="${node.position.y}" width="${width}" height="${height}" rx="2" fill="#F8F7F2" stroke="${node.style.color}" stroke-width="2" />${tint}${iconSvg}<text x="${labelX}" y="${node.position.y + height / 2 + 6}" fill="#162127" font-family="monospace" font-size="14">${escapeText(node.label)}</text>`
     })
     .join('')
 

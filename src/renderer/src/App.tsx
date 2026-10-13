@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import {
   Background,
   Controls,
@@ -15,7 +15,25 @@ import {
   type NodeProps
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Box, Database, Globe, Layers, Server, Waypoints } from 'lucide-react'
+import {
+  ArrowLeft,
+  Box,
+  Boxes,
+  Braces,
+  Cloud,
+  CloudCog,
+  Cpu,
+  Database,
+  Globe,
+  HardDrive,
+  Layers,
+  LogIn,
+  Network,
+  Scale,
+  Server,
+  Waypoints,
+  Workflow
+} from 'lucide-react'
 import {
   DEFAULT_NODE_HEIGHT,
   DEFAULT_NODE_WIDTH,
@@ -26,19 +44,42 @@ import { createDiagramSvg, createPngBlob } from './diagram-export'
 import { useEditorStore } from './editor-store'
 import { techIcons } from './tech-icons'
 const palette: [DiagramNodeKind, string, React.ElementType][] = [
+  ['server', 'Server', HardDrive],
   ['service', 'Service', Server],
-  ['client', 'API', Globe],
+  ['api', 'API', Braces],
+  ['worker', 'Worker / Lambda', Cpu],
+  ['gateway', 'Gateway', Layers],
+  ['load-balancer', 'Load Balancer', Scale],
   ['database', 'Database', Database],
   ['queue', 'Queue', Waypoints],
-  ['gateway', 'Gateway', Layers],
+  ['client', 'Client', Globe],
   ['container', 'Container', Box]
 ]
 
 const paletteByAltitude: Record<DiagramAltitude, DiagramNodeKind[]> = {
-  contexto: ['client', 'gateway', 'container'],
-  sistema: ['service', 'client', 'database', 'queue', 'gateway', 'container'],
-  servicos: ['service', 'database', 'queue', 'container'],
-  fluxo: ['client', 'service', 'queue', 'gateway']
+  contexto: [
+    'server',
+    'service',
+    'api',
+    'worker',
+    'gateway',
+    'load-balancer',
+    'client',
+    'container'
+  ],
+  sistema: palette.map(([kind]) => kind),
+  servicos: [
+    'server',
+    'service',
+    'api',
+    'worker',
+    'gateway',
+    'load-balancer',
+    'database',
+    'queue',
+    'container'
+  ],
+  fluxo: ['api', 'worker', 'service', 'queue', 'gateway', 'load-balancer']
 }
 
 type ComponentNode = Node<
@@ -46,12 +87,18 @@ type ComponentNode = Node<
     label: string
     color?: string
     icon?: string
+    filled: boolean
     kind: DiagramNodeKind
     compact: boolean
+    width: number
+    height: number
     onOpenDetails: () => void
-    resizeSettling: boolean
+    onLabelChange: (label: string) => void
+    onKindChange: (kind: DiagramNodeKind) => void
+    onColorChange: (color: string) => void
+    onIconChange: (icon?: string) => void
+    onFillChange: (filled: boolean) => void
     onResize: (size: { width: number; height: number }) => void
-    onResizeSettled: () => void
   },
   'component'
 >
@@ -59,9 +106,13 @@ type GroupNode = Node<
   {
     label: string
     color: string
-    resizeSettling: boolean
+    width: number
+    height: number
+    onLabelChange: (label: string) => void
+    onColorChange: (color: string) => void
+    onAssign: () => void
+    onDelete: () => void
     onResize: (size: { width: number; height: number }) => void
-    onResizeSettled: () => void
   },
   'group'
 >
@@ -74,22 +125,31 @@ function ServiceNode({
   dragging
 }: NodeProps<ComponentNode>): React.JSX.Element {
   const tech = data.icon ? techIcons[data.icon as keyof typeof techIcons] : undefined
+  const ProviderIcon = data.icon === 'aws' ? Cloud : data.icon === 'azure' ? CloudCog : undefined
   const [resizing, setResizing] = useState(false)
   const PaletteIcon = palette.find(([kind]) => kind === data.kind)?.[2]
   return (
     <div
-      className="animate-node-enter diagram-node size-full min-h-16 min-w-36 rounded-sm border bg-[#fafafa] px-4 py-3 font-mono text-sm text-[#18181b] shadow-[0_8px_20px_rgb(24_24_27/12%)] motion-reduce:animate-none"
+      className="diagram-node relative size-full min-h-16 min-w-36 rounded-sm border bg-[#fafafa] px-4 py-3 font-mono text-sm text-[#18181b] shadow-[0_8px_20px_rgb(24_24_27/12%)]"
       data-dragging={dragging || undefined}
       data-resizing={resizing || undefined}
-      data-resize-settled={data.resizeSettling || undefined}
-      onAnimationEnd={data.onResizeSettled}
-      style={{ borderColor: data.color ?? '#3f3f46' }}
+      data-filled={data.filled || undefined}
+      style={
+        {
+          '--node-color': data.color ?? '#3f3f46',
+          '--node-height': `${data.height}px`,
+          '--node-width': `${data.width}px`,
+          borderColor: data.color ?? '#3f3f46'
+        } as CSSProperties
+      }
       data-testid="service-node"
     >
       <NodeResizer
         color="#27272a"
-        handleStyle={{ height: 14, width: 14 }}
+        handleClassName="resize-handle"
+        handleStyle={{ height: 6, width: 6 }}
         isVisible={selected}
+        lineClassName="resize-hitbox"
         minHeight={64}
         minWidth={144}
         onResizeStart={() => setResizing(true)}
@@ -98,14 +158,24 @@ function ServiceNode({
           data.onResize({ width, height })
         }}
       />
+      <button
+        aria-label={`Open ${data.label}`}
+        className="nodrag nopan absolute -top-8 right-0 z-10 flex size-7 items-center justify-center rounded-sm border border-[#a1a1aa] bg-[#fafafa] text-[#3f3f46] shadow-sm hover:bg-[#e4e4e7]"
+        onClick={data.onOpenDetails}
+        title={`Open ${data.label}`}
+        type="button"
+      >
+        <LogIn aria-hidden="true" size={14} />
+      </button>
       <Handle
         className="connection-handle"
         isConnectable={isConnectable}
         type="target"
         position={Position.Left}
       />
-      <span className="flex items-center gap-2">
-        {tech && !data.compact && (
+      <span className="relative z-10 flex min-w-0 items-center gap-2">
+        {ProviderIcon && !data.compact && <ProviderIcon aria-hidden="true" className="size-4" />}
+        {tech && !ProviderIcon && !data.compact && (
           <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24">
             <path d={tech.path} fill="currentColor" />
           </svg>
@@ -117,10 +187,14 @@ function ServiceNode({
             data-testid={`default-icon-${data.kind}`}
           />
         )}
-        {data.label}
+        <span className="min-w-0 truncate" title={data.label}>
+          {data.label}
+        </span>
       </span>
       {!data.compact && (
-        <span className="mt-1 block text-[10px] uppercase text-[#52525b]">{data.kind}</span>
+        <span className="relative z-10 mt-1 block text-[10px] uppercase text-[#52525b]">
+          {data.kind}
+        </span>
       )}
       <Handle
         className="connection-handle"
@@ -128,6 +202,68 @@ function ServiceNode({
         type="source"
         position={Position.Right}
       />
+      {selected && (
+        <aside
+          aria-label="Properties"
+          className="nodrag nopan nowheel absolute top-0 z-20 w-52 space-y-2 rounded-sm border border-[#71717a] bg-[#fafafa] p-3 font-sans text-[#18181b] shadow-lg"
+          style={{ left: data.width + 12 }}
+        >
+          <label className="block text-xs">
+            Name
+            <input
+              className="mt-1 w-full border p-1"
+              value={data.label}
+              onChange={(event) => data.onLabelChange(event.target.value)}
+            />
+          </label>
+          <label className="block text-xs">
+            Type
+            <select
+              className="mt-1 w-full border p-1"
+              value={data.kind}
+              onChange={(event) => data.onKindChange(event.target.value as DiagramNodeKind)}
+            >
+              {palette.map(([kind, label]) => (
+                <option key={kind} value={kind}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-xs">
+            Color
+            <input
+              className="mt-1 h-8 w-full"
+              type="color"
+              value={data.color}
+              onChange={(event) => data.onColorChange(event.target.value)}
+            />
+          </label>
+          <label className="block text-xs">
+            Icon
+            <select
+              className="mt-1 w-full border p-1"
+              value={data.icon ?? ''}
+              onChange={(event) => data.onIconChange(event.target.value || undefined)}
+            >
+              <option value="">None</option>
+              {Object.keys(techIcons).map((icon) => (
+                <option key={icon} value={icon}>
+                  {['aws', 'gcp', 'azure'].includes(icon) ? icon.toUpperCase() : icon}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              checked={data.filled}
+              onChange={(event) => data.onFillChange(event.target.checked)}
+              type="checkbox"
+            />
+            Tint component
+          </label>
+        </aside>
+      )}
     </div>
   )
 }
@@ -139,15 +275,22 @@ function DiagramGroupNode({ data, selected, dragging }: NodeProps<GroupNode>): R
       className="group-layer diagram-group size-full"
       data-dragging={dragging || undefined}
       data-resizing={resizing || undefined}
-      data-resize-settled={data.resizeSettling || undefined}
       data-selected={selected || undefined}
-      onAnimationEnd={data.onResizeSettled}
-      style={{ borderColor: data.color }}
+      style={
+        {
+          '--group-color': data.color,
+          '--group-height': `${data.height}px`,
+          '--group-width': `${data.width}px`,
+          borderColor: data.color
+        } as CSSProperties
+      }
     >
       <NodeResizer
         color="#27272a"
-        handleStyle={{ height: 14, width: 14 }}
+        handleClassName="resize-handle"
+        handleStyle={{ height: 6, width: 6 }}
         isVisible={selected}
+        lineClassName="resize-hitbox"
         minHeight={160}
         minWidth={240}
         onResizeStart={() => setResizing(true)}
@@ -156,7 +299,38 @@ function DiagramGroupNode({ data, selected, dragging }: NodeProps<GroupNode>): R
           data.onResize({ width, height })
         }}
       />
-      {data.label}
+      <span className="relative z-10">{data.label}</span>
+      {selected && (
+        <aside
+          aria-label="Group properties"
+          className="nodrag nopan nowheel absolute top-0 z-20 w-52 space-y-2 rounded-sm border border-[#71717a] bg-[#fafafa] p-3 font-sans text-[#18181b] shadow-lg"
+          style={{ left: data.width + 12 }}
+        >
+          <label className="block text-xs">
+            Group title
+            <input
+              className="mt-1 w-full border p-1"
+              value={data.label}
+              onChange={(event) => data.onLabelChange(event.target.value)}
+            />
+          </label>
+          <label className="block text-xs">
+            Group color
+            <input
+              className="mt-1 h-8 w-full"
+              type="color"
+              value={data.color}
+              onChange={(event) => data.onColorChange(event.target.value)}
+            />
+          </label>
+          <button className="block text-xs" onClick={data.onAssign} type="button">
+            Assign selected nodes
+          </button>
+          <button className="block text-xs" onClick={data.onDelete} type="button">
+            Delete group
+          </button>
+        </aside>
+      )}
     </div>
   )
 }
@@ -166,16 +340,11 @@ const snapGrid: [number, number] = [16, 16]
 const defaultEdgeOptions = { style: { stroke: '#52525b', strokeWidth: 1.5 } }
 const connectionLineStyle = { stroke: '#27272a', strokeWidth: 2 }
 
-const contourPaths: Record<DiagramAltitude, string[]> = {
-  contexto: ['M3 20C18 4 48 4 61 20'],
-  sistema: ['M3 20C18 4 48 4 61 20', 'M8 24C22 10 43 10 56 24'],
-  servicos: [
-    'M3 20C18 4 48 4 61 20',
-    'M6 22C20 7 45 7 58 22',
-    'M10 25C23 12 42 12 54 25',
-    'M14 28C25 17 39 17 50 28'
-  ],
-  fluxo: ['M4 24H56', 'M48 16L56 24L48 32']
+const altitudeIcons: Record<DiagramAltitude, React.ElementType> = {
+  contexto: Globe,
+  sistema: Boxes,
+  servicos: Network,
+  fluxo: Workflow
 }
 
 function App(): React.JSX.Element {
@@ -193,7 +362,11 @@ function App(): React.JSX.Element {
   const [exportBackground, setExportBackground] = useState<'theme' | 'transparent'>('theme')
   const [pngScale, setPngScale] = useState<1 | 2 | 3>(2)
   const [flow, setFlow] = useState<ReactFlowInstance<CanvasNode> | null>(null)
-  const [settlingNodeId, setSettlingNodeId] = useState<string | null>(null)
+  const [resizePreview, setResizePreview] = useState<{
+    id: string
+    width: number
+    height: number
+  } | null>(null)
   const activeViewport = viewport.canvasId === canvasId ? viewport.value : view.viewport
   const compact = activeViewport.zoom < 0.65
   const nodes = useMemo<CanvasNode[]>(
@@ -203,54 +376,75 @@ function App(): React.JSX.Element {
         type: 'group',
         position: group.position,
         selected: state.selectedGroupIds.includes(group.id),
-        className: settlingNodeId === `group:${group.id}` ? 'resize-settling' : undefined,
         data: {
           label: group.label,
           color: group.style.color,
-          resizeSettling: settlingNodeId === `group:${group.id}`,
+          width: group.width,
+          height: group.height,
+          onLabelChange: (label) => useEditorStore.getState().updateSelectedGroup({ label }),
+          onColorChange: (color) =>
+            useEditorStore.getState().updateSelectedGroup({ style: { ...group.style, color } }),
+          onAssign: () => useEditorStore.getState().assignSelectedNodesToGroup(group.id),
+          onDelete: () => useEditorStore.getState().removeGroups([group.id]),
           onResize: (size) => {
             useEditorStore.getState().resizeGroup(group.id, size)
-            setSettlingNodeId(`group:${group.id}`)
-          },
-          onResizeSettled: () => setSettlingNodeId(null)
+            setResizePreview(null)
+          }
         },
-        style: { height: group.height, width: group.width, zIndex: 0 }
+        style: {
+          height:
+            resizePreview && resizePreview.id === `group:${group.id}`
+              ? resizePreview.height
+              : group.height,
+          width:
+            resizePreview && resizePreview.id === `group:${group.id}`
+              ? resizePreview.width
+              : group.width,
+          zIndex: state.selectedGroupIds.includes(group.id) ? 2 : 0
+        }
       })),
       ...view.nodes.map((node): ComponentNode => ({
         id: node.id,
         type: 'component',
         position: node.position,
         selected: state.selectedNodeIds.includes(node.id),
-        className: settlingNodeId === node.id ? 'resize-settling' : undefined,
         style: {
-          height: node.height ?? DEFAULT_NODE_HEIGHT,
-          width: node.width ?? DEFAULT_NODE_WIDTH,
+          height:
+            resizePreview && resizePreview.id === node.id
+              ? resizePreview.height
+              : (node.height ?? DEFAULT_NODE_HEIGHT),
+          width:
+            resizePreview && resizePreview.id === node.id
+              ? resizePreview.width
+              : (node.width ?? DEFAULT_NODE_WIDTH),
           zIndex: 1
         },
         data: {
           label: node.label,
           color: node.style.color,
           icon: node.style.icon,
+          filled: node.style.filled ?? false,
           kind: node.kind,
           compact,
-          onOpenDetails: () => state.openComponentDetail(node.id),
-          resizeSettling: settlingNodeId === node.id,
+          width: node.width ?? DEFAULT_NODE_WIDTH,
+          height: node.height ?? DEFAULT_NODE_HEIGHT,
+          onOpenDetails: () => useEditorStore.getState().openComponentDetail(node.id),
+          onLabelChange: (label) => useEditorStore.getState().updateSelectedNode({ label }),
+          onKindChange: (kind) => useEditorStore.getState().updateSelectedNode({ kind }),
+          onColorChange: (color) =>
+            useEditorStore.getState().updateSelectedNode({ style: { ...node.style, color } }),
+          onIconChange: (icon) =>
+            useEditorStore.getState().updateSelectedNode({ style: { ...node.style, icon } }),
+          onFillChange: (filled) =>
+            useEditorStore.getState().updateSelectedNode({ style: { ...node.style, filled } }),
           onResize: (size) => {
             useEditorStore.getState().resizeNode(node.id, size)
-            setSettlingNodeId(node.id)
-          },
-          onResizeSettled: () => setSettlingNodeId(null)
+            setResizePreview(null)
+          }
         }
       }))
     ],
-    [
-      compact,
-      settlingNodeId,
-      state.selectedGroupIds,
-      state.selectedNodeIds,
-      view.groups,
-      view.nodes
-    ]
+    [compact, resizePreview, state.selectedGroupIds, state.selectedNodeIds, view.groups, view.nodes]
   )
   const edges = useMemo(
     () =>
@@ -264,8 +458,6 @@ function App(): React.JSX.Element {
       })),
     [state.selectedEdgeIds, view.edges]
   )
-  const selected = view.nodes.find((node) => node.id === state.selectedNodeIds[0])
-  const selectedGroup = view.groups.find((group) => group.id === state.selectedGroupIds[0])
   const selectedEdge = view.edges.find((edge) => edge.id === state.selectedEdgeIds[0])
   const activePalette = palette.filter(([kind]) =>
     paletteByAltitude[parentView.altitude].includes(kind)
@@ -291,6 +483,10 @@ function App(): React.JSX.Element {
   const onNodesChange = useCallback((changes: NodeChange<CanvasNode>[]) => {
     const editor = useEditorStore.getState()
     for (const change of changes) {
+      if (change.type === 'dimensions' && change.resizing && change.dimensions) {
+        setResizePreview({ id: change.id, ...change.dimensions })
+        continue
+      }
       if (change.type !== 'position' || !change.position) continue
       if (change.id.startsWith('group:')) {
         editor.moveGroup(change.id.slice(6), change.position)
@@ -344,16 +540,6 @@ function App(): React.JSX.Element {
             {state.document.metadata.name}
             {state.dirty ? ' *' : ''}
           </h2>
-          {detailRoot && (
-            <div className="mt-1 flex items-center gap-2 text-xs text-[#d4d4d8]">
-              <button onClick={state.closeComponentDetail} type="button">
-                Back to {parentView.name}
-              </button>
-              <span>
-                {parentView.name} / {detailRoot.label}
-              </span>
-            </div>
-          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -443,29 +629,32 @@ function App(): React.JSX.Element {
       <div className="canvas-shell">
         <div className="canvas-controls border-r border-[#52525b] bg-[#fafafa]">
           <nav className="altitude-ruler" aria-label="Altitude views">
-            {state.document.views.map((candidate) => (
-              <button
-                aria-current={candidate.id === state.activeViewId ? 'page' : undefined}
-                className="altitude-view"
-                disabled={candidate.name === 'Em breve'}
-                key={candidate.id}
-                onClick={() => {
-                  state.setActiveView(candidate.id)
-                  setViewport({
-                    canvasId: `${state.document.metadata.id}:${candidate.id}:`,
-                    value: candidate.viewport
-                  })
-                }}
-                type="button"
-              >
-                <svg aria-hidden="true" viewBox="0 0 64 36">
-                  {contourPaths[candidate.altitude].map((path) => (
-                    <path d={path} fill="none" key={path} stroke="currentColor" strokeWidth="1.5" />
-                  ))}
-                </svg>
-                <span>{candidate.name}</span>
-              </button>
-            ))}
+            {state.document.views.map((candidate) => {
+              const AltitudeIcon = altitudeIcons[candidate.altitude]
+              return (
+                <button
+                  aria-current={candidate.id === state.activeViewId ? 'page' : undefined}
+                  className="altitude-view"
+                  disabled={candidate.name === 'Em breve'}
+                  key={candidate.id}
+                  onClick={() => {
+                    state.setActiveView(candidate.id)
+                    setViewport({
+                      canvasId: `${state.document.metadata.id}:${candidate.id}:`,
+                      value: candidate.viewport
+                    })
+                  }}
+                  type="button"
+                >
+                  <AltitudeIcon
+                    aria-hidden="true"
+                    data-testid={`altitude-icon-${candidate.altitude}`}
+                    strokeWidth={1.75}
+                  />
+                  <span>{candidate.name}</span>
+                </button>
+              )
+            })}
           </nav>
           <aside className="component-palette" aria-label="Components">
             <span className="px-2 py-1 font-mono text-xs text-[#52525b]">COMPONENTS</span>
@@ -489,98 +678,6 @@ function App(): React.JSX.Element {
               </button>
             ))}
           </aside>
-          {selectedGroup && (
-            <aside className="properties-panel" aria-label="Properties">
-              <label className="block text-xs">
-                Group title
-                <input
-                  className="mt-1 w-full border p-1"
-                  value={selectedGroup.label}
-                  onChange={(event) => state.updateSelectedGroup({ label: event.target.value })}
-                />
-              </label>
-              <label className="block text-xs">
-                Group color
-                <input
-                  className="mt-1 w-full"
-                  type="color"
-                  value={selectedGroup.style.color}
-                  onChange={(event) =>
-                    state.updateSelectedGroup({
-                      style: { ...selectedGroup.style, color: event.target.value }
-                    })
-                  }
-                />
-              </label>
-              <button
-                onClick={() => state.assignSelectedNodesToGroup(selectedGroup.id)}
-                type="button"
-              >
-                Assign selected nodes
-              </button>
-              <button onClick={() => state.removeGroups([selectedGroup.id])} type="button">
-                Delete group
-              </button>
-            </aside>
-          )}
-          {selected && !selectedGroup && (
-            <aside className="properties-panel" aria-label="Properties">
-              <label className="block text-xs">
-                Name
-                <input
-                  className="mt-1 w-full border p-1"
-                  value={selected.label}
-                  onChange={(event) => state.updateSelectedNode({ label: event.target.value })}
-                />
-              </label>
-              <label className="block text-xs">
-                Type
-                <select
-                  className="mt-1 w-full border p-1"
-                  value={selected.kind}
-                  onChange={(event) =>
-                    state.updateSelectedNode({ kind: event.target.value as DiagramNodeKind })
-                  }
-                >
-                  {palette.map(([kind, label]) => (
-                    <option key={kind} value={kind}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block text-xs">
-                Color
-                <input
-                  className="mt-1 w-full"
-                  type="color"
-                  value={selected.style.color}
-                  onChange={(event) =>
-                    state.updateSelectedNode({
-                      style: { ...selected.style, color: event.target.value }
-                    })
-                  }
-                />
-              </label>
-              <label className="block text-xs">
-                Icon
-                <select
-                  className="mt-1 w-full border p-1"
-                  value={selected.style.icon ?? ''}
-                  onChange={(event) =>
-                    state.updateSelectedNode({
-                      style: { ...selected.style, icon: event.target.value || undefined }
-                    })
-                  }
-                >
-                  <option value="">None</option>
-                  {Object.keys(techIcons).map((icon) => (
-                    <option key={icon}>{icon}</option>
-                  ))}
-                </select>
-              </label>
-            </aside>
-          )}
           {selectedEdge && (
             <aside className="properties-panel" aria-label="Properties">
               <p className="text-xs text-[#52525b]">Connection</p>
@@ -610,6 +707,30 @@ function App(): React.JSX.Element {
             }
           }}
         >
+          {detailRoot && (
+            <div
+              className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-3 rounded-sm border border-[#71717a] bg-[#18181b] px-3 py-2 text-[#fafafa] shadow-lg"
+              role="status"
+            >
+              <button
+                className="flex items-center gap-1 rounded-sm border border-[#71717a] px-2 py-1 text-xs hover:bg-[#3f3f46]"
+                onClick={state.closeComponentDetail}
+                type="button"
+              >
+                <ArrowLeft aria-hidden="true" size={14} />
+                Back to {parentView.name}
+              </button>
+              <span className="h-6 border-l border-[#52525b]" />
+              <span>
+                <span className="block font-mono text-[10px] uppercase tracking-wider text-[#a1a1aa]">
+                  Inside component flow
+                </span>
+                <span className="block text-sm font-medium">
+                  {parentView.name} / {detailRoot.label}
+                </span>
+              </span>
+            </div>
+          )}
           {!nodes.length && (
             <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-sm text-[#52525b]">
               Drag a component here to start diagramming.
@@ -633,7 +754,11 @@ function App(): React.JSX.Element {
             onMove={onMove}
             onMoveEnd={onMoveEnd}
             onNodesDelete={onNodesDelete}
-            onNodeDoubleClick={(_, node) => state.openComponentDetail(node.id)}
+            onNodeClick={(_, node) => {
+              if (node.id.startsWith('group:')) state.selectGroup(node.id.slice(6))
+              else state.setSelection([node.id], [])
+            }}
+            onPaneClick={() => useEditorStore.getState().setSelection([], [])}
             onSelectionChange={onSelectionChange}
             viewport={activeViewport}
           >

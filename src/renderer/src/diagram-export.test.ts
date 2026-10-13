@@ -61,6 +61,16 @@ describe('diagram export', () => {
     expect(svg).not.toContain('#E8ECE7')
   })
 
+  it('exports a softly tinted component fill', () => {
+    const tinted = structuredClone(view)
+    tinted.nodes[0].style.filled = true
+
+    const svg = createDiagramSvg(tinted, { background: 'transparent' })
+
+    expect(svg).toContain('fill-opacity="0.11"')
+    expect(svg).toContain('width="4"')
+  })
+
   it('uses the Survey background only when requested', () => {
     expect(createDiagramSvg(view, { background: 'theme' })).toContain('fill="#E8ECE7"')
     expect(createDiagramSvg(view, { background: 'transparent' })).not.toContain('fill="#E8ECE7"')

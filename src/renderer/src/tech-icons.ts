@@ -28,6 +28,14 @@ import {
 } from 'simple-icons'
 
 export const techIcons = {
+  aws: {
+    hex: 'FF9900',
+    path: 'M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z'
+  },
+  azure: {
+    hex: '0078D4',
+    path: 'M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z'
+  },
   go: siGo,
   docker: siDocker,
   postgres: siPostgresql,

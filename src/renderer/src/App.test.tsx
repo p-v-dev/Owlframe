@@ -16,15 +16,24 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     Handle: ({ type }: { type: string }) => <span data-testid={`${type}-handle`} />,
     NodeResizer: ({
       isVisible,
+      handleStyle,
+      lineClassName,
+      onResizeStart,
       onResizeEnd
     }: {
       isVisible?: boolean
+      handleStyle?: { height?: number; width?: number }
+      lineClassName?: string
+      onResizeStart?: () => void
       onResizeEnd?: (event: unknown, size: { width: number; height: number }) => void
     }) =>
       isVisible ? (
         <button
           data-testid="node-resizer"
+          data-line-class={lineClassName}
           onClick={() => onResizeEnd?.({}, { width: 240, height: 112 })}
+          onMouseDown={() => onResizeStart?.()}
+          style={handleStyle}
           type="button"
         >
           Resize test node
@@ -39,6 +48,8 @@ vi.mock('@xyflow/react', async (importOriginal) => {
       onMove,
       onNodesChange,
       onConnect,
+      onNodeClick,
+      onPaneClick,
       onSelectionChange,
       viewport
     }: {
@@ -63,6 +74,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
       nodes?: {
         id: string
         type?: string
+        style?: { width?: number; height?: number }
         data: {
           label: string
           color?: string
@@ -77,7 +89,8 @@ vi.mock('@xyflow/react', async (importOriginal) => {
       onMove?: (event: null, viewport: { x: number; y: number; zoom: number }) => void
       onNodesChange?: (changes: unknown[]) => void
       onConnect?: (connection: { source: string; target: string }) => void
-      onNodeDoubleClick?: (event: unknown, node: { id: string }) => void
+      onNodeClick?: (event: unknown, node: { id: string }) => void
+      onPaneClick?: () => void
       onSelectionChange?: (selection: { nodes: { id: string }[]; edges: { id: string }[] }) => void
       viewport?: { x: number; y: number; zoom: number }
     }) => {
@@ -89,6 +102,18 @@ vi.mock('@xyflow/react', async (importOriginal) => {
           data-testid="react-flow"
           data-edges={JSON.stringify(edges)}
           data-viewport={`${activeViewport?.x},${activeViewport?.y},${activeViewport?.zoom}`}
+          onAuxClick={() =>
+            nodes?.[0] &&
+            onNodesChange?.([
+              {
+                id: nodes[0].id,
+                type: 'dimensions',
+                resizing: true,
+                dimensions: { width: 208, height: 96 }
+              }
+            ])
+          }
+          onClick={(event) => event.target === event.currentTarget && onPaneClick?.()}
           onMouseMove={() => onMove?.(null, { x: 24, y: 48, zoom: 0.5 })}
           onDoubleClick={() =>
             nodes?.[0] &&
@@ -105,9 +130,13 @@ vi.mock('@xyflow/react', async (importOriginal) => {
             const NodeComponent = nodeTypes?.[node.type ?? 'default']
             return NodeComponent ? (
               <div
+                data-node-size={`${node.style?.width},${node.style?.height}`}
+                data-testid="flow-node"
                 key={node.id}
-                onClick={() => onSelectionChange?.({ nodes: [node], edges: [] })}
-                onDoubleClick={() => node.data.onOpenDetails?.()}
+                onClick={() => {
+                  onNodeClick?.({}, node)
+                  onSelectionChange?.({ nodes: [node], edges: [] })
+                }}
               >
                 <NodeComponent data={node.data} selected={node.selected} />
               </div>
@@ -207,23 +236,31 @@ describe('App', () => {
   it('switches the active altitude view from the ruler', () => {
     render(<App />)
 
+    expect(screen.getByTestId('altitude-icon-contexto')).toBeTruthy()
+    expect(screen.getByTestId('altitude-icon-sistema')).toBeTruthy()
+    expect(screen.getByTestId('altitude-icon-servicos')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
 
     expect(useEditorStore.getState().activeViewId).toBe('view-sistema')
   })
 
-  it('disables the forthcoming view and navigates component details with a breadcrumb', () => {
+  it('signals the component flow and returns to its parent view', () => {
     render(<App />)
 
     expect(screen.getByRole('button', { name: 'Em breve' }).hasAttribute('disabled')).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
-    fireEvent.doubleClick(screen.getByText('Service 1'))
+    fireEvent.click(screen.getByRole('button', { name: 'Open Service 1' }))
 
+    expect(screen.getByText('Inside component flow')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Back to Arquitetura geral' })).toBeTruthy()
     expect(screen.getByText('Arquitetura geral / Service 1')).toBeTruthy()
+    expect(useEditorStore.getState().activeDetailNodeId).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to Arquitetura geral' }))
     expect(screen.queryByRole('button', { name: 'Back to Arquitetura geral' })).toBeNull()
+    expect(screen.queryByText('Inside component flow')).toBeNull()
+    expect(useEditorStore.getState().activeDetailNodeId).toBeUndefined()
+    expect(screen.getByText('Service 1')).toBeTruthy()
   })
 
   it('adds a visual group from the component palette', () => {
@@ -237,13 +274,37 @@ describe('App', () => {
   it('shows component choices appropriate to the active altitude', () => {
     render(<App />)
 
-    expect(screen.getByRole('button', { name: 'API' })).toBeTruthy()
+    for (const label of [
+      'Server',
+      'Service',
+      'API',
+      'Worker / Lambda',
+      'Gateway',
+      'Load Balancer'
+    ]) {
+      expect(screen.getByRole('button', { name: label })).toBeTruthy()
+    }
     expect(screen.queryByRole('button', { name: 'Database' })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
 
     expect(screen.getByRole('button', { name: 'Database' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'API' })).toBeTruthy()
+  })
+
+  it('clears the component selection when the canvas is clicked', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByText('Service 1'))
+
+    expect(useEditorStore.getState().selectedNodeIds).toHaveLength(1)
+    expect(screen.getByLabelText('Name')).toBeTruthy()
+    expect(screen.getByLabelText('Name').closest('[data-testid="service-node"]')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('react-flow'))
+
+    expect(useEditorStore.getState().selectedNodeIds).toEqual([])
+    expect(screen.queryByLabelText('Name')).toBeNull()
   })
 
   it('edits, assigns nodes to, and deletes a selected visual group', () => {
@@ -268,6 +329,8 @@ describe('App', () => {
       label: 'Platform',
       style: { color: '#c85f30' }
     })
+    expect(group.closest('.group-layer')?.getAttribute('style')).toContain('--group-color: #c85f30')
+    expect(screen.getByLabelText('Group title').closest('.group-layer')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete group' }))
 
@@ -340,13 +403,52 @@ describe('App', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
 
-    for (const label of ['Service', 'API', 'Database', 'Queue', 'Gateway', 'Container']) {
+    for (const label of [
+      'Server',
+      'Service',
+      'API',
+      'Worker / Lambda',
+      'Gateway',
+      'Load Balancer'
+    ]) {
       fireEvent.click(screen.getByRole('button', { name: label }))
     }
 
-    for (const kind of ['service', 'client', 'database', 'queue', 'gateway', 'container']) {
+    for (const kind of ['server', 'service', 'api', 'worker', 'gateway', 'load-balancer']) {
       expect(screen.getByTestId(`default-icon-${kind}`)).toBeTruthy()
     }
+  })
+
+  it('keeps the Worker / Lambda label inside a wider component', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Worker / Lambda' }))
+
+    expect(useEditorStore.getState().getActiveView().nodes[0].width).toBe(208)
+    expect(screen.getByText('Worker / Lambda 1').className).toContain('truncate')
+  })
+
+  it('offers AWS, GCP, and Azure icons for a component', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByText('Service 1'))
+
+    for (const provider of ['AWS', 'GCP', 'AZURE']) {
+      expect(screen.getByRole('option', { name: provider })).toBeTruthy()
+    }
+
+    fireEvent.change(screen.getByLabelText('Icon'), { target: { value: 'aws' } })
+    expect(useEditorStore.getState().getActiveView().nodes[0].style.icon).toBe('aws')
+  })
+
+  it('applies a soft color tint to the selected component', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByText('Service 1'))
+
+    fireEvent.click(screen.getByLabelText('Tint component'))
+
+    expect(useEditorStore.getState().getActiveView().nodes[0].style.filled).toBe(true)
+    expect(screen.getByTestId('service-node').dataset.filled).toBe('true')
   })
 
   it('persists a node position change emitted by the canvas', () => {
@@ -382,7 +484,8 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
     fireEvent.click(screen.getByText('Service 1'))
 
-    expect(screen.getByTestId('node-resizer')).toBeTruthy()
+    expect(screen.getByTestId('node-resizer').style.width).toBe('6px')
+    expect(screen.getByTestId('node-resizer').dataset.lineClass).toBe('resize-hitbox')
   })
 
   it('ignores automatic measurements and persists only explicit resize', () => {
@@ -396,6 +499,20 @@ describe('App', () => {
     })
 
     fireEvent.click(screen.getByText('Service 1'))
+    const componentActions = screen.getByLabelText('Name').closest('aside')
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Resize test node' }))
+    fireEvent(screen.getByTestId('react-flow'), new MouseEvent('auxclick', { bubbles: true }))
+
+    expect(screen.getByTestId('service-node').dataset.resizing).toBe('true')
+    expect(screen.getByTestId('flow-node').dataset.nodeSize).toBe('208,96')
+    expect(screen.getByText('Service 1')).toBeTruthy()
+    expect(screen.getByLabelText('Name').closest('aside')).toBe(componentActions)
+    expect(componentActions?.getAttribute('style')).toContain('left: 188px')
+    expect(useEditorStore.getState().getActiveView().nodes[0]).toMatchObject({
+      width: 176,
+      height: 64
+    })
+
     fireEvent.click(screen.getByRole('button', { name: 'Resize test node' }))
 
     expect(useEditorStore.getState().getActiveView().nodes[0]).toMatchObject({
@@ -404,19 +521,25 @@ describe('App', () => {
     })
   })
 
-  it('marks a resized component for its settling animation', () => {
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
-    fireEvent.click(screen.getByText('Service 1'))
-    fireEvent.click(screen.getByRole('button', { name: 'Resize test node' }))
-
-    expect(screen.getByTestId('service-node').dataset.resizeSettled).toBe('true')
-  })
-
   it('shows resize controls for a selected group and persists its dimensions', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Add group' }))
     fireEvent.click(screen.getByText('Group 1'))
+    const groupActions = screen.getByLabelText('Group title').closest('aside')
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Resize test node' }))
+    fireEvent(screen.getByTestId('react-flow'), new MouseEvent('auxclick', { bubbles: true }))
+
+    expect(screen.getByText('Group 1').closest('.group-layer')?.getAttribute('data-resizing')).toBe(
+      'true'
+    )
+    expect(screen.getByTestId('flow-node').dataset.nodeSize).toBe('208,96')
+    expect(screen.getByLabelText('Group title').closest('aside')).toBe(groupActions)
+    expect(groupActions?.getAttribute('style')).toContain('left: 372px')
+    expect(useEditorStore.getState().getActiveView().groups[0]).toMatchObject({
+      width: 360,
+      height: 240
+    })
+
     fireEvent.click(screen.getByRole('button', { name: 'Resize test node' }))
 
     expect(useEditorStore.getState().getActiveView().groups[0]).toMatchObject({
@@ -457,13 +580,6 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Select test node and edge' }))
 
     expect(screen.getByRole('button', { name: 'Delete connection' })).toBeTruthy()
-  })
-
-  it('animates a newly added service', () => {
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
-
-    expect(screen.getByTestId('service-node').className).toContain('animate-node-enter')
   })
 
   it('shows the project name and unsaved marker after an edit', () => {

@@ -160,7 +160,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { document, activeViewId, activeDetailNodeId } = get()
     const view = getActiveView(document, activeViewId, activeDetailNodeId)
     const number = view.nodes.length + 1
-    const label = `${kind[0].toUpperCase()}${kind.slice(1)} ${number}`
+    const name =
+      kind === 'api'
+        ? 'API'
+        : kind === 'worker'
+          ? 'Worker / Lambda'
+          : kind === 'load-balancer'
+            ? 'Load Balancer'
+            : `${kind[0].toUpperCase()}${kind.slice(1)}`
+    const label = `${name} ${number}`
 
     set({
       document: activeDetailNodeId
@@ -173,7 +181,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 kind,
                 label,
                 position: position ?? { x: 80, y: 80 },
-                width: DEFAULT_NODE_WIDTH,
+                width: kind === 'worker' ? 208 : DEFAULT_NODE_WIDTH,
                 height: DEFAULT_NODE_HEIGHT,
                 style: { color: '#3f3f46' }
               }
@@ -187,7 +195,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
               x: 80 + ((number - 1) % 4) * 192,
               y: 80 + Math.floor((number - 1) / 4) * 128
             },
-            width: DEFAULT_NODE_WIDTH,
+            width: kind === 'worker' ? 208 : DEFAULT_NODE_WIDTH,
             height: DEFAULT_NODE_HEIGHT,
             style: { color: '#3f3f46' }
           }),

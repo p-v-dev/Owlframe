@@ -12,33 +12,6 @@
   font-display: swap;
 }
 
-@keyframes node-enter {
-  0% {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  65% {
-    box-shadow: 0 0 0 6px rgb(82 82 91 / 18%);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes resize-settle {
-  from {
-    transform: scale(0.985);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-@utility animate-node-enter {
-  animation: node-enter 600ms ease-out both;
-}
-
 html,
 body,
 #root {
@@ -81,10 +54,33 @@ body {
     stroke-width 160ms ease;
 }
 
-.react-flow__node.resize-settling {
-  transition:
-    width 160ms ease-out,
-    height 160ms ease-out;
+.react-flow__resize-control.resize-handle::after {
+  position: absolute;
+  inset: -6px;
+  content: '';
+}
+
+.react-flow__resize-control.resize-hitbox::after {
+  position: absolute;
+  content: '';
+}
+
+.react-flow__resize-control.resize-hitbox.left::after,
+.react-flow__resize-control.resize-hitbox.right::after {
+  top: 0;
+  left: 50%;
+  width: 16px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.react-flow__resize-control.resize-hitbox.top::after,
+.react-flow__resize-control.resize-hitbox.bottom::after {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 16px;
+  transform: translateY(-50%);
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
@@ -167,8 +163,9 @@ body {
 }
 
 .diagram-group {
+  position: relative;
   border: 1px dashed;
-  background: rgb(161 161 170 / 12%);
+  background: color-mix(in srgb, var(--group-color) 14%, transparent);
   color: #52525b;
   padding: 0.5rem;
   font:
@@ -182,23 +179,85 @@ body {
     background-color 160ms ease;
 }
 
+.diagram-node,
+.diagram-group {
+  isolation: isolate;
+}
+
+.diagram-node[data-filled='true'] {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--node-color) 65%, transparent) 0 4px,
+      transparent 4px
+    ),
+    color-mix(in srgb, var(--node-color) 11%, #fafafa);
+}
+
 .diagram-group[data-selected='true'] {
   border-style: solid;
-  box-shadow: 0 0 0 2px #315b68;
+  background: color-mix(in srgb, var(--group-color) 20%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--group-color) 45%, transparent);
 }
 
 .diagram-node[data-dragging='true'],
-.diagram-node[data-resizing='true'],
-.diagram-group[data-dragging='true'],
-.diagram-group[data-resizing='true'] {
+.diagram-group[data-dragging='true'] {
   box-shadow:
     0 10px 24px rgb(24 24 27 / 18%),
     0 0 0 2px #315b68;
 }
 
-.diagram-node[data-resize-settled='true'],
-.diagram-group[data-resize-settled='true'] {
-  animation: resize-settle 160ms ease-out;
+.diagram-node[data-resizing='true'] {
+  border-color: #315b68 !important;
+  border-style: dashed;
+  background: rgb(49 91 104 / 8%);
+  box-shadow: 0 0 0 2px rgb(49 91 104 / 12%);
+}
+
+.diagram-node[data-resizing='true']::before {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: var(--node-width);
+  height: var(--node-height);
+  box-sizing: border-box;
+  border: 1px solid var(--node-color);
+  border-radius: 0.125rem;
+  background: #fafafa;
+  box-shadow: 0 8px 20px rgb(24 24 27 / 12%);
+  content: '';
+  pointer-events: none;
+  z-index: 0;
+}
+
+.diagram-node[data-filled='true'][data-resizing='true']::before {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--node-color) 65%, transparent) 0 4px,
+      transparent 4px
+    ),
+    color-mix(in srgb, var(--node-color) 11%, #fafafa);
+}
+
+.diagram-group[data-resizing='true'] {
+  border-color: var(--group-color) !important;
+  background: color-mix(in srgb, var(--group-color) 5%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--group-color) 18%, transparent);
+}
+
+.diagram-group[data-resizing='true']::before {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: var(--group-width);
+  height: var(--group-height);
+  box-sizing: border-box;
+  border: 1px dashed var(--group-color);
+  background: color-mix(in srgb, var(--group-color) 14%, transparent);
+  content: '';
+  pointer-events: none;
+  z-index: 0;
 }
 
 button,
