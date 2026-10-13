@@ -137,8 +137,6 @@ function ServiceNode({
       style={
         {
           '--node-color': data.color ?? '#3f3f46',
-          '--node-height': `${data.height}px`,
-          '--node-width': `${data.width}px`,
           borderColor: data.color ?? '#3f3f46'
         } as CSSProperties
       }
@@ -276,14 +274,7 @@ function DiagramGroupNode({ data, selected, dragging }: NodeProps<GroupNode>): R
       data-dragging={dragging || undefined}
       data-resizing={resizing || undefined}
       data-selected={selected || undefined}
-      style={
-        {
-          '--group-color': data.color,
-          '--group-height': `${data.height}px`,
-          '--group-width': `${data.width}px`,
-          borderColor: data.color
-        } as CSSProperties
-      }
+      style={{ '--group-color': data.color, borderColor: data.color } as CSSProperties}
     >
       <NodeResizer
         color="#27272a"

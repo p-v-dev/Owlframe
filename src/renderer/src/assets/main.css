@@ -214,50 +214,10 @@ body {
   box-shadow: 0 0 0 2px rgb(49 91 104 / 12%);
 }
 
-.diagram-node[data-resizing='true']::before {
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  width: var(--node-width);
-  height: var(--node-height);
-  box-sizing: border-box;
-  border: 1px solid var(--node-color);
-  border-radius: 0.125rem;
-  background: #fafafa;
-  box-shadow: 0 8px 20px rgb(24 24 27 / 12%);
-  content: '';
-  pointer-events: none;
-  z-index: 0;
-}
-
-.diagram-node[data-filled='true'][data-resizing='true']::before {
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--node-color) 65%, transparent) 0 4px,
-      transparent 4px
-    ),
-    color-mix(in srgb, var(--node-color) 11%, #fafafa);
-}
-
 .diagram-group[data-resizing='true'] {
   border-color: var(--group-color) !important;
   background: color-mix(in srgb, var(--group-color) 5%, transparent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--group-color) 18%, transparent);
-}
-
-.diagram-group[data-resizing='true']::before {
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  width: var(--group-width);
-  height: var(--group-height);
-  box-sizing: border-box;
-  border: 1px dashed var(--group-color);
-  background: color-mix(in srgb, var(--group-color) 14%, transparent);
-  content: '';
-  pointer-events: none;
-  z-index: 0;
 }
 
 button,

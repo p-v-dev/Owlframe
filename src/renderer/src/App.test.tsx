@@ -504,6 +504,7 @@ describe('App', () => {
     fireEvent(screen.getByTestId('react-flow'), new MouseEvent('auxclick', { bubbles: true }))
 
     expect(screen.getByTestId('service-node').dataset.resizing).toBe('true')
+    expect(screen.getByTestId('service-node').style.getPropertyValue('--node-width')).toBe('')
     expect(screen.getByTestId('flow-node').dataset.nodeSize).toBe('208,96')
     expect(screen.getByText('Service 1')).toBeTruthy()
     expect(screen.getByLabelText('Name').closest('aside')).toBe(componentActions)
@@ -532,6 +533,12 @@ describe('App', () => {
     expect(screen.getByText('Group 1').closest('.group-layer')?.getAttribute('data-resizing')).toBe(
       'true'
     )
+    expect(
+      screen
+        .getByText('Group 1')
+        .closest<HTMLElement>('.group-layer')
+        ?.style.getPropertyValue('--group-width')
+    ).toBe('')
     expect(screen.getByTestId('flow-node').dataset.nodeSize).toBe('208,96')
     expect(screen.getByLabelText('Group title').closest('aside')).toBe(groupActions)
     expect(groupActions?.getAttribute('style')).toContain('left: 372px')
