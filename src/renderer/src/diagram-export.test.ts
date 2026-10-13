@@ -53,7 +53,7 @@ describe('diagram export', () => {
     expect(svg).toContain('Source &lt;one&gt;')
     expect(svg).toContain('Target &quot;two&quot;')
     expect(svg).toContain('<rect x="10" y="20" width="300" height="180"')
-    expect(svg).toContain('<rect x="40" y="80" width="176" height="56"')
+    expect(svg).toContain('<rect x="40" y="80" width="176" height="64"')
     expect(svg).toContain('marker-end="url(#arrow)"')
     expect(svg).toContain('fill="none"')
     expect(svg).toContain('stroke-dasharray="6 4"')
@@ -77,6 +77,19 @@ describe('diagram export', () => {
 
     expect(svg).toContain(siDocker.path)
     expect(svg).toContain('Source &lt;one&gt;')
+  })
+
+  it('exports resized node dimensions and aligned edge endpoints', () => {
+    const svg = createDiagramSvg(
+      {
+        ...view,
+        nodes: [{ ...view.nodes[0], width: 240, height: 112 }, view.nodes[1]]
+      },
+      { background: 'transparent' }
+    )
+
+    expect(svg).toContain('<rect x="40" y="80" width="240" height="112"')
+    expect(svg).toContain('<line x1="280" y1="136"')
   })
 
   it('creates a scaled PNG blob and releases its source URL', async () => {

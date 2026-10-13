@@ -1,8 +1,6 @@
-import type { DiagramView } from '../../core/document'
+import { DEFAULT_NODE_HEIGHT, DEFAULT_NODE_WIDTH, type DiagramView } from '../../core/document'
 import { techIcons } from './tech-icons'
 
-const NODE_WIDTH = 176
-const NODE_HEIGHT = 56
 const PADDING = 32
 
 function escapeText(value: string): string {
@@ -22,8 +20,8 @@ function bounds(view: DiagramView): { x: number; y: number; width: number; heigh
     ...view.nodes.map((node) => ({
       left: node.position.x,
       top: node.position.y,
-      right: node.position.x + NODE_WIDTH,
-      bottom: node.position.y + NODE_HEIGHT
+      right: node.position.x + (node.width ?? DEFAULT_NODE_WIDTH),
+      bottom: node.position.y + (node.height ?? DEFAULT_NODE_HEIGHT)
     }))
   ]
   if (!items.length) return { x: 0, y: 0, width: 64, height: 64 }
@@ -56,10 +54,10 @@ export function createDiagramSvg(
       const source = nodes.get(edge.sourceId)
       const target = nodes.get(edge.targetId)
       if (!source || !target) return []
-      const x1 = source.position.x + NODE_WIDTH
-      const y1 = source.position.y + NODE_HEIGHT / 2
+      const x1 = source.position.x + (source.width ?? DEFAULT_NODE_WIDTH)
+      const y1 = source.position.y + (source.height ?? DEFAULT_NODE_HEIGHT) / 2
       const x2 = target.position.x
-      const y2 = target.position.y + NODE_HEIGHT / 2
+      const y2 = target.position.y + (target.height ?? DEFAULT_NODE_HEIGHT) / 2
       const label = edge.label
         ? `<text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 8}" text-anchor="middle" fill="#162127" font-family="sans-serif" font-size="12">${escapeText(edge.label)}</text>`
         : ''
@@ -75,7 +73,9 @@ export function createDiagramSvg(
         ? `<path d="${icon.path}" fill="#${icon.hex}" transform="translate(${node.position.x + 12} ${node.position.y + 20}) scale(0.75)" />`
         : ''
       const labelX = node.position.x + (icon ? 40 : 12)
-      return `<rect x="${node.position.x}" y="${node.position.y}" width="${NODE_WIDTH}" height="${NODE_HEIGHT}" rx="2" fill="#F8F7F2" stroke="${node.style.color}" stroke-width="2" />${iconSvg}<text x="${labelX}" y="${node.position.y + 34}" fill="#162127" font-family="monospace" font-size="14">${escapeText(node.label)}</text>`
+      const width = node.width ?? DEFAULT_NODE_WIDTH
+      const height = node.height ?? DEFAULT_NODE_HEIGHT
+      return `<rect x="${node.position.x}" y="${node.position.y}" width="${width}" height="${height}" rx="2" fill="#F8F7F2" stroke="${node.style.color}" stroke-width="2" />${iconSvg}<text x="${labelX}" y="${node.position.y + height / 2 + 6}" fill="#162127" font-family="monospace" font-size="14">${escapeText(node.label)}</text>`
     })
     .join('')
 

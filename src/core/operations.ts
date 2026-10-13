@@ -1,4 +1,5 @@
 import type {
+  ComponentDetail,
   DiagramDocument,
   DiagramEdge,
   DiagramGroup,
@@ -111,6 +112,51 @@ export function removeNode(
       ...view,
       nodes: view.nodes.filter((node) => node.id !== nodeId),
       edges: view.edges.filter((edge) => edge.sourceId !== nodeId && edge.targetId !== nodeId)
+    }
+  })
+}
+
+export function createComponentDetail(
+  document: DiagramDocument,
+  viewId: string,
+  nodeId: string
+): DiagramDocument {
+  return changeView(document, viewId, (view) => {
+    const node = view.nodes.find((candidate) => candidate.id === nodeId)
+    if (!node) throw new Error(`Node not found: ${nodeId}`)
+    if (node.detail) throw new Error(`Component detail already exists: ${nodeId}`)
+    const detail: ComponentDetail = {
+      nodes: [],
+      edges: [],
+      groups: [],
+      viewport: { x: 0, y: 0, zoom: 1 }
+    }
+
+    return {
+      ...view,
+      nodes: view.nodes.map((candidate) =>
+        candidate.id === nodeId ? { ...candidate, detail } : candidate
+      )
+    }
+  })
+}
+
+export function updateComponentDetail(
+  document: DiagramDocument,
+  viewId: string,
+  nodeId: string,
+  patch: Partial<ComponentDetail>
+): DiagramDocument {
+  return changeView(document, viewId, (view) => {
+    const node = view.nodes.find((candidate) => candidate.id === nodeId)
+    if (!node?.detail) throw new Error(`Component detail not found: ${nodeId}`)
+    const detail: ComponentDetail = { ...node.detail, ...patch }
+
+    return {
+      ...view,
+      nodes: view.nodes.map((candidate) =>
+        candidate.id === nodeId ? { ...candidate, detail } : candidate
+      )
     }
   })
 }

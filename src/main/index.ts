@@ -62,6 +62,7 @@ function createWindow(): void {
     minWidth: 640,
     minHeight: 480,
     title: APP_NAME,
+    backgroundColor: '#18181b',
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),

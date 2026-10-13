@@ -28,6 +28,10 @@ function isString(value: unknown): value is string {
   return typeof value === 'string'
 }
 
+function isPositiveNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
 function uniqueIds(items: unknown[], viewId: string, type: string): string | undefined {
   const ids = new Set<string>()
   for (const item of items) {
@@ -89,6 +93,12 @@ export function validateDocument(value: unknown): DocumentValidationResult {
         return { ok: false, error: `View ${view.id} node ${candidate.id} has an invalid kind` }
       }
       if (
+        (candidate.width !== undefined || candidate.height !== undefined) &&
+        (!isPositiveNumber(candidate.width) || !isPositiveNumber(candidate.height))
+      ) {
+        return { ok: false, error: `View ${view.id} node ${candidate.id} has invalid dimensions` }
+      }
+      if (
         candidate.groupId !== undefined &&
         (!isString(candidate.groupId) || !groupIds.has(candidate.groupId))
       ) {
@@ -98,6 +108,90 @@ export function validateDocument(value: unknown): DocumentValidationResult {
         }
       }
       nodeIds.add(candidate.id as string)
+
+      if (candidate.detail !== undefined) {
+        if (!isRecord(candidate.detail)) {
+          return { ok: false, error: `Detail for view ${view.id} node ${candidate.id} is invalid` }
+        }
+        const detail = candidate.detail
+        if (
+          !Array.isArray(detail.nodes) ||
+          !Array.isArray(detail.edges) ||
+          !Array.isArray(detail.groups)
+        ) {
+          return {
+            ok: false,
+            error: `Detail for view ${view.id} node ${candidate.id} has invalid contents`
+          }
+        }
+        const detailLabel = `Detail for view ${view.id} node ${candidate.id}`
+        const detailNodeError = uniqueIds(detail.nodes, detailLabel, 'node')
+        if (detailNodeError) return { ok: false, error: detailNodeError.replace('View ', '') }
+        const detailEdgeError = uniqueIds(detail.edges, detailLabel, 'edge')
+        if (detailEdgeError) return { ok: false, error: detailEdgeError.replace('View ', '') }
+        const detailGroupError = uniqueIds(detail.groups, detailLabel, 'group')
+        if (detailGroupError) return { ok: false, error: detailGroupError.replace('View ', '') }
+
+        const detailGroupIds = new Set(detail.groups.map((group) => (group as { id: string }).id))
+        const detailNodeIds = new Set<string>()
+        for (const detailNode of detail.nodes) {
+          const detailCandidate = detailNode as Record<string, unknown>
+          if (
+            detailCandidate.detail !== undefined ||
+            !nodeKinds.includes(detailCandidate.kind as DiagramNodeKind)
+          ) {
+            return { ok: false, error: `${detailLabel} node ${detailCandidate.id} is invalid` }
+          }
+          if (
+            (detailCandidate.width !== undefined || detailCandidate.height !== undefined) &&
+            (!isPositiveNumber(detailCandidate.width) || !isPositiveNumber(detailCandidate.height))
+          ) {
+            return {
+              ok: false,
+              error: `${detailLabel} node ${detailCandidate.id} has invalid dimensions`
+            }
+          }
+          if (
+            detailCandidate.groupId !== undefined &&
+            (!isString(detailCandidate.groupId) || !detailGroupIds.has(detailCandidate.groupId))
+          ) {
+            return {
+              ok: false,
+              error: `${detailLabel} node ${detailCandidate.id} references an unknown group`
+            }
+          }
+          detailNodeIds.add(detailCandidate.id as string)
+        }
+        for (const detailEdge of detail.edges) {
+          const detailCandidate = detailEdge as Record<string, unknown>
+          if (
+            !edgeStyles.includes(detailCandidate.style as DiagramEdgeStyle) ||
+            !isString(detailCandidate.sourceId) ||
+            !isString(detailCandidate.targetId) ||
+            !detailNodeIds.has(detailCandidate.sourceId) ||
+            !detailNodeIds.has(detailCandidate.targetId)
+          ) {
+            return {
+              ok: false,
+              error: `${detailLabel} edge ${detailCandidate.id} references an unknown node`
+            }
+          }
+          if (detailCandidate.sourceId === detailCandidate.targetId) {
+            return {
+              ok: false,
+              error: `${detailLabel} edge ${detailCandidate.id} endpoints must differ`
+            }
+          }
+        }
+        if (
+          !isRecord(detail.viewport) ||
+          !isPositiveNumber(detail.viewport.zoom) ||
+          typeof detail.viewport.x !== 'number' ||
+          typeof detail.viewport.y !== 'number'
+        ) {
+          return { ok: false, error: `${detailLabel} has an invalid viewport` }
+        }
+      }
     }
 
     for (const edge of view.edges) {

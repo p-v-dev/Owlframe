@@ -56,6 +56,45 @@ describe('validateDocument', () => {
     expect(validateDocument(document)).toEqual({ ok: true, document })
   })
 
+  it('validates persisted component details independently from their parent view', () => {
+    const document = validDocument()
+    document.views[0].nodes[0].detail = {
+      groups: [
+        {
+          id: 'runtime',
+          label: 'Runtime',
+          position: { x: 0, y: 0 },
+          width: 200,
+          height: 100,
+          style: { color: '#315B68' }
+        }
+      ],
+      nodes: [
+        { ...document.views[0].nodes[0], id: 'nginx', groupId: 'runtime' },
+        { ...document.views[0].nodes[0], id: 'api', groupId: undefined },
+        { ...document.views[0].nodes[1], id: 'database' }
+      ],
+      edges: [
+        { id: 'nginx-api', sourceId: 'nginx', targetId: 'api', style: 'solid' },
+        { id: 'api-database', sourceId: 'api', targetId: 'database', style: 'solid' }
+      ],
+      viewport: { x: 12, y: 24, zoom: 1.25 }
+    }
+
+    expect(validateDocument(document)).toEqual({ ok: true, document })
+    document.views[0].nodes[0].detail.edges[0].targetId = 'missing'
+    expect(validateDocument(document)).toEqual({
+      ok: false,
+      error: 'Detail for view view-contexto node api edge nginx-api references an unknown node'
+    })
+    document.views[0].nodes[0].detail.edges[0].targetId = 'api'
+    document.views[0].nodes[0].detail.nodes[0].groupId = 'missing'
+    expect(validateDocument(document)).toEqual({
+      ok: false,
+      error: 'Detail for view view-contexto node api node nginx references an unknown group'
+    })
+  })
+
   it.each([
     ['a non-object root', null, 'Document must be an object'],
     [
@@ -86,6 +125,19 @@ describe('validateDocument', () => {
         ]
       },
       'View view-contexto node api has an invalid kind'
+    ],
+    [
+      'invalid node dimensions',
+      {
+        ...validDocument(),
+        views: [
+          {
+            ...validDocument().views[0],
+            nodes: [{ ...validDocument().views[0].nodes[0], width: 0, height: 100 }]
+          }
+        ]
+      },
+      'View view-contexto node api has invalid dimensions'
     ],
     [
       'an unknown edge style',

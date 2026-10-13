@@ -13,7 +13,23 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     ...actual,
     Background: () => null,
     Controls: () => null,
-    Handle: () => null,
+    Handle: ({ type }: { type: string }) => <span data-testid={`${type}-handle`} />,
+    NodeResizer: ({
+      isVisible,
+      onResizeEnd
+    }: {
+      isVisible?: boolean
+      onResizeEnd?: (event: unknown, size: { width: number; height: number }) => void
+    }) =>
+      isVisible ? (
+        <button
+          data-testid="node-resizer"
+          onClick={() => onResizeEnd?.({}, { width: 240, height: 112 })}
+          type="button"
+        >
+          Resize test node
+        </button>
+      ) : null,
     ReactFlow: ({
       children,
       defaultViewport,
@@ -21,6 +37,9 @@ vi.mock('@xyflow/react', async (importOriginal) => {
       nodeTypes,
       nodes,
       onMove,
+      onNodesChange,
+      onConnect,
+      onSelectionChange,
       viewport
     }: {
       children?: ReactNode
@@ -29,15 +48,37 @@ vi.mock('@xyflow/react', async (importOriginal) => {
       nodeTypes?: Record<
         string,
         ComponentType<{
-          data: { label: string; color?: string; icon?: string; kind: string; compact: boolean }
+          data: {
+            label: string
+            color?: string
+            icon?: string
+            kind?: string
+            compact?: boolean
+            onResize?: (size: { width: number; height: number }) => void
+            onOpenDetails?: () => void
+          }
+          selected?: boolean
         }>
       >
       nodes?: {
         id: string
         type?: string
-        data: { label: string; color?: string; icon?: string; kind: string; compact: boolean }
+        data: {
+          label: string
+          color?: string
+          icon?: string
+          kind?: string
+          compact?: boolean
+          onResize?: (size: { width: number; height: number }) => void
+          onOpenDetails?: () => void
+        }
+        selected?: boolean
       }[]
       onMove?: (event: null, viewport: { x: number; y: number; zoom: number }) => void
+      onNodesChange?: (changes: unknown[]) => void
+      onConnect?: (connection: { source: string; target: string }) => void
+      onNodeDoubleClick?: (event: unknown, node: { id: string }) => void
+      onSelectionChange?: (selection: { nodes: { id: string }[]; edges: { id: string }[] }) => void
       viewport?: { x: number; y: number; zoom: number }
     }) => {
       const [initialViewport] = useState(defaultViewport)
@@ -49,11 +90,58 @@ vi.mock('@xyflow/react', async (importOriginal) => {
           data-edges={JSON.stringify(edges)}
           data-viewport={`${activeViewport?.x},${activeViewport?.y},${activeViewport?.zoom}`}
           onMouseMove={() => onMove?.(null, { x: 24, y: 48, zoom: 0.5 })}
+          onDoubleClick={() =>
+            nodes?.[0] &&
+            onNodesChange?.([{ id: nodes[0].id, type: 'position', position: { x: 208, y: 144 } }])
+          }
+          onContextMenu={() =>
+            nodes?.[0] &&
+            onNodesChange?.([
+              { id: nodes[0].id, type: 'dimensions', dimensions: { width: 999, height: 999 } }
+            ])
+          }
         >
           {nodes?.map((node) => {
             const NodeComponent = nodeTypes?.[node.type ?? 'default']
-            return NodeComponent ? <NodeComponent data={node.data} key={node.id} /> : null
+            return NodeComponent ? (
+              <div
+                key={node.id}
+                onClick={() => onSelectionChange?.({ nodes: [node], edges: [] })}
+                onDoubleClick={() => node.data.onOpenDetails?.()}
+              >
+                <NodeComponent data={node.data} selected={node.selected} />
+              </div>
+            ) : null
           })}
+          {nodes && nodes.length >= 2 && (
+            <button
+              onClick={() => onConnect?.({ source: nodes[0].id, target: nodes[1].id })}
+              type="button"
+            >
+              Connect test nodes
+            </button>
+          )}
+          {edges?.[0] && (
+            <>
+              <button
+                onClick={() => onSelectionChange?.({ nodes: [], edges: [{ id: edges[0].id }] })}
+                type="button"
+              >
+                Select test edge
+              </button>
+              <button
+                onClick={() =>
+                  onSelectionChange?.({
+                    nodes: nodes?.slice(0, 1) ?? [],
+                    edges: [{ id: edges[0].id }]
+                  })
+                }
+                type="button"
+              >
+                Select test node and edge
+              </button>
+            </>
+          )}
           {children}
         </div>
       )
@@ -119,9 +207,23 @@ describe('App', () => {
   it('switches the active altitude view from the ruler', () => {
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sistema' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
 
     expect(useEditorStore.getState().activeViewId).toBe('view-sistema')
+  })
+
+  it('disables the forthcoming view and navigates component details with a breadcrumb', () => {
+    render(<App />)
+
+    expect(screen.getByRole('button', { name: 'Em breve' }).hasAttribute('disabled')).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.doubleClick(screen.getByText('Service 1'))
+
+    expect(screen.getByRole('button', { name: 'Back to Arquitetura geral' })).toBeTruthy()
+    expect(screen.getByText('Arquitetura geral / Service 1')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Arquitetura geral' }))
+    expect(screen.queryByRole('button', { name: 'Back to Arquitetura geral' })).toBeNull()
   })
 
   it('adds a visual group from the component palette', () => {
@@ -130,6 +232,18 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add group' }))
 
     expect(useEditorStore.getState().getActiveView().groups).toHaveLength(1)
+  })
+
+  it('shows component choices appropriate to the active altitude', () => {
+    render(<App />)
+
+    expect(screen.getByRole('button', { name: 'API' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Database' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
+
+    expect(screen.getByRole('button', { name: 'Database' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'API' })).toBeTruthy()
   })
 
   it('edits, assigns nodes to, and deletes a selected visual group', () => {
@@ -209,9 +323,8 @@ describe('App', () => {
 
     fireEvent.mouseMove(screen.getByTestId('react-flow'))
 
-    expect((document.querySelector('.group-layer') as HTMLElement).style.transform).toBe(
-      'translate(24px, 48px) scale(0.5)'
-    )
+    expect(screen.getByTestId('react-flow').dataset.viewport).toBe('24,48,0.5')
+    expect(screen.getByText('Group 1')).toBeTruthy()
     expect(screen.queryByText('service')).toBeNull()
   })
 
@@ -221,6 +334,129 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
 
     expect(screen.getByText('Service 1')).toBeTruthy()
+  })
+
+  it('renders the palette icon for new components without a custom technology icon', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
+
+    for (const label of ['Service', 'API', 'Database', 'Queue', 'Gateway', 'Container']) {
+      fireEvent.click(screen.getByRole('button', { name: label }))
+    }
+
+    for (const kind of ['service', 'client', 'database', 'queue', 'gateway', 'container']) {
+      expect(screen.getByTestId(`default-icon-${kind}`)).toBeTruthy()
+    }
+  })
+
+  it('persists a node position change emitted by the canvas', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.doubleClick(screen.getByTestId('react-flow'))
+
+    expect(useEditorStore.getState().getActiveView().nodes[0].position).toEqual({
+      x: 208,
+      y: 144
+    })
+  })
+
+  it('makes palette components draggable', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
+
+    expect(screen.getByRole('button', { name: 'Database' }).getAttribute('draggable')).toBe('true')
+  })
+
+  it('connects two components through the canvas', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Database' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Connect test nodes' }))
+
+    expect(useEditorStore.getState().getActiveView().edges).toHaveLength(1)
+  })
+
+  it('shows resize controls for a selected component', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByText('Service 1'))
+
+    expect(screen.getByTestId('node-resizer')).toBeTruthy()
+  })
+
+  it('ignores automatic measurements and persists only explicit resize', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.contextMenu(screen.getByTestId('react-flow'))
+
+    expect(useEditorStore.getState().getActiveView().nodes[0]).toMatchObject({
+      width: 176,
+      height: 64
+    })
+
+    fireEvent.click(screen.getByText('Service 1'))
+    fireEvent.click(screen.getByRole('button', { name: 'Resize test node' }))
+
+    expect(useEditorStore.getState().getActiveView().nodes[0]).toMatchObject({
+      width: 240,
+      height: 112
+    })
+  })
+
+  it('marks a resized component for its settling animation', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByText('Service 1'))
+    fireEvent.click(screen.getByRole('button', { name: 'Resize test node' }))
+
+    expect(screen.getByTestId('service-node').dataset.resizeSettled).toBe('true')
+  })
+
+  it('shows resize controls for a selected group and persists its dimensions', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add group' }))
+    fireEvent.click(screen.getByText('Group 1'))
+    fireEvent.click(screen.getByRole('button', { name: 'Resize test node' }))
+
+    expect(useEditorStore.getState().getActiveView().groups[0]).toMatchObject({
+      width: 240,
+      height: 112
+    })
+  })
+
+  it('keeps a selected edge selected in the controlled canvas', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Database' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Connect test nodes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select test edge' }))
+
+    expect(screen.getByTestId('react-flow').dataset.edges).toContain('"selected":true')
+  })
+
+  it('deletes a selected connection from its properties panel', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Database' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Connect test nodes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select test edge' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete connection' }))
+
+    expect(useEditorStore.getState().getActiveView().edges).toEqual([])
+  })
+
+  it('keeps the delete connection action available with another selection', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Componentes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Database' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Connect test nodes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select test node and edge' }))
+
+    expect(screen.getByRole('button', { name: 'Delete connection' })).toBeTruthy()
   })
 
   it('animates a newly added service', () => {

@@ -1,4 +1,6 @@
 export const SCHEMA_VERSION = 1
+export const DEFAULT_NODE_WIDTH = 176
+export const DEFAULT_NODE_HEIGHT = 64
 
 export type DiagramAltitude = 'contexto' | 'sistema' | 'servicos' | 'fluxo'
 export type DiagramNodeKind = 'service' | 'database' | 'queue' | 'gateway' | 'client' | 'container'
@@ -28,8 +30,18 @@ export interface DiagramNode {
   kind: DiagramNodeKind
   label: string
   position: DiagramPosition
+  width?: number
+  height?: number
   style: DiagramStyle
   groupId?: string
+  detail?: ComponentDetail
+}
+
+export interface ComponentDetail {
+  nodes: Omit<DiagramNode, 'detail'>[]
+  edges: DiagramEdge[]
+  groups: DiagramGroup[]
+  viewport: DiagramViewport
 }
 
 export interface DiagramEdge {
@@ -72,7 +84,7 @@ export function createEmptyDocument(id: string, name: string): DiagramDocument {
     views: [
       {
         id: 'view-contexto',
-        name: 'Contexto',
+        name: 'Arquitetura geral',
         altitude: 'contexto',
         nodes: [],
         edges: [],
@@ -81,7 +93,7 @@ export function createEmptyDocument(id: string, name: string): DiagramDocument {
       },
       {
         id: 'view-sistema',
-        name: 'Sistema',
+        name: 'Componentes',
         altitude: 'sistema',
         nodes: [],
         edges: [],
@@ -90,17 +102,8 @@ export function createEmptyDocument(id: string, name: string): DiagramDocument {
       },
       {
         id: 'view-servicos',
-        name: 'Serviços',
+        name: 'Em breve',
         altitude: 'servicos',
-        nodes: [],
-        edges: [],
-        groups: [],
-        viewport: { x: 0, y: 0, zoom: 1 }
-      },
-      {
-        id: 'view-fluxo',
-        name: 'Fluxo',
-        altitude: 'fluxo',
         nodes: [],
         edges: [],
         groups: [],

@@ -18,10 +18,19 @@
     transform: scale(0.92);
   }
   65% {
-    box-shadow: 0 0 0 6px rgb(49 94 105 / 18%);
+    box-shadow: 0 0 0 6px rgb(82 82 91 / 18%);
   }
   100% {
     opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes resize-settle {
+  from {
+    transform: scale(0.985);
+  }
+  to {
     transform: scale(1);
   }
 }
@@ -38,18 +47,69 @@ body,
 }
 
 body {
+  background: #f4f4f5;
   font-family: 'Instrument Sans', sans-serif;
+}
+
+.connection-handle {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid #fafafa;
+  background: #27272a;
+  box-shadow: 0 0 0 0 rgb(49 91 104 / 0%);
+  transition:
+    width 160ms ease,
+    height 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.connection-handle:hover,
+.connection-handle.connectingfrom,
+.connection-handle.connectingto,
+.connection-handle.valid {
+  width: 1rem;
+  height: 1rem;
+  background: #315b68;
+  box-shadow: 0 0 0 3px rgb(49 91 104 / 20%);
+}
+
+.react-flow__connection-path,
+.react-flow__edge-path {
+  transition:
+    stroke 160ms ease,
+    stroke-width 160ms ease;
+}
+
+.react-flow__node.resize-settling {
+  transition:
+    width 160ms ease-out,
+    height 160ms ease-out;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #315b68;
+  stroke-width: 2.5px;
+}
+
+.canvas-shell {
+  display: flex;
+  min-height: 0;
+  flex: 1;
 }
 
 .canvas-controls {
   display: flex;
+  width: 12rem;
+  flex: 0 0 12rem;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .altitude-ruler {
   display: flex;
   flex-direction: column;
-  width: 8.5rem;
-  border-right: 1px solid #315b68;
+  border-bottom: 1px solid #52525b;
   padding: 0.5rem;
 }
 
@@ -64,7 +124,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #315b68;
+  color: #52525b;
   font:
     0.75rem 'IBM Plex Mono',
     monospace;
@@ -76,64 +136,129 @@ body {
 }
 
 .altitude-view[aria-current='page'] {
-  background: #162127;
-  color: #f8f7f2;
+  background: #18181b;
+  color: #fafafa;
 }
 
 .component-palette {
   display: flex;
-  width: 11rem;
   flex-direction: column;
   gap: 0.25rem;
-  border-right: 1px solid #315b68;
+  border-bottom: 1px solid #52525b;
   padding: 0.5rem;
 }
 
 .palette-action:hover,
 .altitude-view:hover {
-  background: #e8ece7;
+  background: #e4e4e7;
 }
 
 .altitude-view[aria-current='page']:hover {
-  background: #162127;
+  background: #18181b;
 }
 
 .properties-panel {
-  width: 16rem;
-  border-right: 1px solid #315b68;
+  border-bottom: 1px solid #52525b;
   padding: 0.75rem;
 }
 
 .group-layer {
-  position: absolute;
-  z-index: 3;
-  transform-origin: 0 0;
+  box-sizing: border-box;
 }
 
 .diagram-group {
-  position: absolute;
-  box-sizing: border-box;
   border: 1px dashed;
-  background: rgb(141 165 154 / 12%);
-  color: #315b68;
+  background: rgb(161 161 170 / 12%);
+  color: #52525b;
   padding: 0.5rem;
   font:
     0.75rem 'IBM Plex Mono',
     monospace;
-  cursor: pointer;
+  cursor: move;
   text-align: left;
+  transition:
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.diagram-group[data-selected='true'] {
+  border-style: solid;
+  box-shadow: 0 0 0 2px #315b68;
+}
+
+.diagram-node[data-dragging='true'],
+.diagram-node[data-resizing='true'],
+.diagram-group[data-dragging='true'],
+.diagram-group[data-resizing='true'] {
+  box-shadow:
+    0 10px 24px rgb(24 24 27 / 18%),
+    0 0 0 2px #315b68;
+}
+
+.diagram-node[data-resize-settled='true'],
+.diagram-group[data-resize-settled='true'] {
+  animation: resize-settle 160ms ease-out;
+}
+
+button,
+input,
+select {
+  border-radius: 0.375rem;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgb(24 24 27 / 12%);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+input:not([type='color']),
+select {
+  border-color: #a1a1aa;
+  background: #fafafa;
+  color: #18181b;
+}
+
+input[type='color'] {
+  min-height: 2rem;
+  border: 1px solid #a1a1aa;
+  background: #fafafa;
+  padding: 0.125rem;
+}
+
+input:hover,
+select:hover {
+  border-color: #315b68;
 }
 
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid #c85f30;
+  outline: 2px solid #315b68;
   outline-offset: 2px;
 }
 
 @media (max-width: 767px) {
+  .canvas-shell {
+    flex-direction: column;
+  }
+
   .canvas-controls {
+    width: 100%;
+    flex: 0 0 auto;
+    flex-direction: row;
     flex-wrap: wrap;
+    overflow-y: visible;
   }
 
   .altitude-ruler,
@@ -142,7 +267,7 @@ select:focus-visible {
     flex-direction: row;
     flex-wrap: wrap;
     border-right: 0;
-    border-bottom: 1px solid #315b68;
+    border-bottom: 1px solid #52525b;
   }
 
   .altitude-view {
@@ -158,6 +283,7 @@ select:focus-visible {
   *,
   *::before,
   *::after {
+    animation: none !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }

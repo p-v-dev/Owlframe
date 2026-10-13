@@ -10,11 +10,13 @@ import {
   addGroup,
   addNode,
   addView,
+  createComponentDetail,
   removeEdge,
   removeGroup,
   removeNode,
   removeView,
   renameView,
+  updateComponentDetail,
   updateGroup,
   updateNode,
   updateView
@@ -54,7 +56,7 @@ describe('view operations', () => {
     const withView = addView(document, view('view-system'))
 
     expect(renameView(withView, 'view-system', 'System').views.at(-1)?.name).toBe('System')
-    expect(document.views).toHaveLength(4)
+    expect(document.views).toHaveLength(3)
   })
 
   it('rejects duplicate and missing view IDs', () => {
@@ -76,6 +78,23 @@ describe('view operations', () => {
 })
 
 describe('node and group operations', () => {
+  it('creates, updates, and removes a component detail with its root node', () => {
+    const root = addNode(createEmptyDocument('project-1', 'Payments'), 'view-contexto', node('api'))
+    const withDetail = createComponentDetail(root, 'view-contexto', 'api')
+    const document = updateComponentDetail(withDetail, 'view-contexto', 'api', {
+      nodes: [node('worker')],
+      edges: [],
+      groups: [],
+      viewport: { x: 12, y: 24, zoom: 1.5 }
+    })
+
+    expect(document.views[0].nodes[0].detail).toMatchObject({
+      nodes: [node('worker')],
+      viewport: { x: 12, y: 24, zoom: 1.5 }
+    })
+    expect(removeNode(document, 'view-contexto', 'api').views[0].nodes).toEqual([])
+  })
+
   it('adds and updates a node while preserving its ID', () => {
     const document = addNode(
       createEmptyDocument('project-1', 'Payments'),
